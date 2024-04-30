@@ -131,7 +131,7 @@ uint64_t HDL_RTC_GetTimeTick(uint16_t *pSub)
 }
 
 /**
- * @brief 获取mytime_struct类型的时间。
+ * @brief 获取mtime_t类型的时间。
  *
  * @param myTime
  */
@@ -173,7 +173,7 @@ void HDL_RTC_SetTimeTick(uint64_t timestamp)
 }
 
 /**
- * @brief 使用mytime_struct对象来设置时间。被设置的时间必须大于等于RTC_BASE_YEAR
+ * @brief 使用mtime_t对象来设置时间。被设置的时间必须大于等于RTC_BASE_YEAR
  * 否则没有效果。设置时间的时间精度为秒。
  *
  * @param myTime

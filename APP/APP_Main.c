@@ -110,6 +110,8 @@ uint8_t Sensor_Queue_Read(RTU_Sampling_Var_t *var)
 {
     return cqueue_dequeue(&Sensor_Queue, var);
 }
+
+void FatFs_Init();
 /**
  * @brief 光伏RTU主程序处理器。
  *
@@ -137,6 +139,13 @@ void APP_Main()
     // HDL_ADC_Enable(); // 使能
     // HDL_WATCHDOG_Init(20);
     ulog_init_user();
+
+    ULOG_INFO("====================================================================");
+    ULOG_INFO("[Bootloader] Bootloader start.");
+    ULOG_INFO("====================================================================");
+
+    // App初始化
+    FatFs_Init();
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);
     LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -249,7 +258,8 @@ void APP_Main()
         //    }
 
         BFL_4G_Poll();
-
+        // LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
+        // LL_LPM_EnableDeepSleep();
         //    if (BFL_4G_TCP_Readable(SOCKET0))
         //    {
         //      uint32_t len = BFL_4G_TCP_Read(SOCKET0, (uint8_t *)buf, 80);

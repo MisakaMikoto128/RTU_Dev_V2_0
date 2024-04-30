@@ -34,7 +34,7 @@ int32_t w25q512_erase_one_sector_cmd(uint32_t sector);
  * @return int32_t 成功返回0，失败返回-1
  * @note 1. 初始化QSPI。2.复位W25Q512。2.使得W25Q512工作在4字节模式。
  */
-int32_t CHIP_W25Q512_init()
+int32_t CHIP_W25Q512_Init()
 {
     int32_t status = 0;
     // 1.启动QSPI外设
@@ -42,7 +42,7 @@ int32_t CHIP_W25Q512_init()
     HAL_QSPI_DeInit(&w25qxx_hqspi); // reset QSPI
 
     w25qxx_hqspi.Instance                = QUADSPI;
-    w25qxx_hqspi.Init.ClockPrescaler     = 2 - 1;
+    w25qxx_hqspi.Init.ClockPrescaler     = 4 - 1;
     w25qxx_hqspi.Init.FifoThreshold      = 8;
     w25qxx_hqspi.Init.SampleShifting     = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
     w25qxx_hqspi.Init.FlashSize          = POSITION_VAL(W25Q512_FLASH_SIZE) + 1 - 1;

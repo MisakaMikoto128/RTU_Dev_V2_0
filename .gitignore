@@ -22,3 +22,4 @@ MDK-ARM/.VSCodeCounter/*
 .eide/*
 .eide.usr.ctx.json
 RTU_Dev_V2_0.code-workspace
+build/*

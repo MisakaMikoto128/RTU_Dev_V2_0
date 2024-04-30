@@ -12,7 +12,7 @@
 #define CHIP_W25Q512_H_
 #include "main.h"
 #include <stdint.h>
-int32_t CHIP_W25Q512_init();
+int32_t CHIP_W25Q512_Init();
 int32_t CHIP_W25Q512_read(uint32_t address, uint8_t *data, uint32_t size);
 int32_t CHIP_W25Q512_write(uint32_t address, uint8_t *data, uint32_t size);
 

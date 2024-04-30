@@ -101,7 +101,7 @@ uint64_t make_empty_amount = 0;
  */
 void CHIP_W25Q512_QFS_init()
 {
-    CHIP_W25Q512_init();
+    CHIP_W25Q512_Init();
 
     // 初始化开始固化流程的阈值
     uint32_t tmp_threshold = flush_data2flash_threshold_persentage * 0.01f * QFS_WRITE_QUEUE_CAPACITY;
