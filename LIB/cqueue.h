@@ -1,14 +1,14 @@
 /**
-* @file cqueue.h
-* @author Liu Yuanlin (liuyuanlins@outlook.com)
-* @brief
-* @version 0.1
-* @date 2023-09-13
-* @last modified 2023-09-13
-*
-* @copyright Copyright (c) 2023 Liu Yuanlin Personal.
-*
-*/
+ * @file cqueue.h
+ * @author Liu Yuanlin (liuyuanlins@outlook.com)
+ * @brief
+ * @version 0.1
+ * @date 2023-09-13
+ * @last modified 2023-09-13
+ *
+ * @copyright Copyright (c) 2023 Liu Yuanlin Personal.
+ *
+ */
 #ifndef CQUEUE_H
 #define CQUEUE_H
 
@@ -16,31 +16,30 @@
 extern "C" {
 #endif
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include "cobject.h"
-    /*
-    --> rear | | | | | | | font-->
-    */
+/*
+--> rear | | | | | | | font-->
+*/
 
-    typedef struct
-    {
-        uint32_t Capacity;
-        uint32_t Front;
-        uint32_t Rear;
-        uint32_t ItemSize;
-        CObject_t *pData;
-    } CQueue_t;
+typedef struct
+{
+    uint32_t Capacity;
+    uint32_t Front;
+    uint32_t Rear;
+    uint32_t ItemSize;
+    CObject_t *pData;
+} CQueue_t;
 
-    typedef CQueue_t *CQueue;
+typedef CQueue_t *CQueue;
 
-    uint8_t cqueue_create(CQueue Q, CObject_t pBuf, uint32_t uiQueueLength, uint32_t uiItemSize);
-    uint8_t cqueue_enqueue(CQueue Q, const CObject_t pX);
-    uint8_t cqueue_dequeue(CQueue Q, CObject_t pX);
-    uint32_t cqueue_in(CQueue Q, const CObject_t pBuf, uint32_t bufSize);
-    uint32_t cqueue_out(CQueue Q, CObject_t pBuf, uint32_t bufSize);
+uint8_t cqueue_create(CQueue Q, CObject_t pBuf, uint32_t uiQueueLength, uint32_t uiItemSize);
+uint8_t cqueue_enqueue(CQueue Q, const CObject_t pX);
+uint8_t cqueue_dequeue(CQueue Q, CObject_t pX);
+uint32_t cqueue_in(CQueue Q, const CObject_t pBuf, uint32_t bufSize);
+uint32_t cqueue_out(CQueue Q, CObject_t pBuf, uint32_t bufSize);
 
 // 返回队列容量：元素个数
 #define cqueue_capacity(Q) ((Q)->Capacity)
@@ -72,4 +71,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif //!CQUEUE_H
+#endif //! CQUEUE_H

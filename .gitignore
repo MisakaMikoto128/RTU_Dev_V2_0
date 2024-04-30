@@ -1,0 +1,24 @@
+.mxproject
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+MDK-ARM/g4-cmsis-dap.cfg
+MDK-ARM/.clang-format
+MDK-ARM/EventRecorderStub.scvd
+MDK-ARM/RTU_Dev_V2_0.uvguix.LSH
+MDK-ARM/RTE/_RTU_Dev/*
+MDK-ARM/DebugConfig/*
+MDK-ARM/RTU/CCC.lnp
+Output/*
+test log/log.log
+MDK-ARM/.VSCodeCounter/*
+*.a
+*.o
+*.d
+/build/*
+/Debug/*
+.cmsis/*
+.vscode/*
+.clang-format
+.eide/*
+.eide.usr.ctx.json
+RTU_Dev_V2_0.code-workspace

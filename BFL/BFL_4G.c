@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include "BFL_4G.h"
 #include "cqueue.h"
+#include "ccommon.h"
 #include "log.h"
 #include "BFL_4G_Task.h"
 
@@ -24,21 +25,15 @@ AsyncTaskExecContext_t context;
 void BFL_4G_Init(const char *PDP_type, const char *APN)
 {
     CommunPara_t *pCommunPara = &context.CommunPara;
-    if (APN != NULL)
-    {
+    if (APN != NULL) {
         strncpy(pCommunPara->APN, APN, 5);
-    }
-    else
-    {
+    } else {
         strncpy(pCommunPara->APN, "CMIOT", 5);
     }
 
-    if (PDP_type != NULL)
-    {
+    if (PDP_type != NULL) {
         strncpy(pCommunPara->PDP_type, PDP_type, 6);
-    }
-    else
-    {
+    } else {
         strncpy(pCommunPara->PDP_type, "IP", 6);
     }
 
@@ -57,10 +52,9 @@ int32_t BFL_4G_TCP_Init(int sockid, const char *hostAddr, uint16_t port)
     strncpy(pCommunPara->hostAddr[sockid], hostAddr, 32);
     pCommunPara->socketPorts[sockid] = port;
 
-    if (pCommunPara->socketIsEnable[sockid] == false)
-    {
+    if (pCommunPara->socketIsEnable[sockid] == false) {
         pCommunPara->socketIsEnable[sockid] = true;
-        BFL_4G_TCP_List_TaskCreate(sockid);
+        BFL_4G_TaskList_Create(sockid);
 
         // TODO:urc table
         BFL_4G_TCP_Task_UCRTable_Init(sockid);
@@ -73,7 +67,7 @@ int32_t BFL_4G_TCP_Init(int sockid, const char *hostAddr, uint16_t port)
 uint32_t BFL_4G_TCP_Write(int sockid, uint8_t *writeBuf, uint32_t uLen)
 {
     uint32_t ret = 0;
-    ret = BFL_4G_TCPWrite_Task(sockid, writeBuf, uLen);
+    ret          = BFL_4G_TCPWrite_Task(sockid, writeBuf, uLen);
     return ret;
 }
 
@@ -81,16 +75,16 @@ uint32_t BFL_4G_TCP_Writeable(int sockid)
 {
     UNUSED(sockid);
     uint32_t ret = 0;
-    bool result = false;
-    result = BFL_4G_TCP_Task_Writeable();
-    ret = (uint32_t)result;
+    bool result  = false;
+    result       = BFL_4G_TCP_Task_Writeable();
+    ret          = (uint32_t)result;
     return ret;
 }
 
 uint32_t BFL_4G_TCP_Read(int sockid, unsigned char *pBuf, uint32_t uiLen)
 {
     uint32_t ret = 0;
-    ret = cqueue_out(&context.socketRevQueues[sockid], pBuf, uiLen);
+    ret          = cqueue_out(&context.socketRevQueues[sockid], pBuf, uiLen);
     return ret;
 }
 

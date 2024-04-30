@@ -13,7 +13,7 @@
 #include "sc_list.h"
 #include <stdint.h>
 #include "scheduler.h"
-#include "mytime.h"
+#include "mtime.h"
 /**
  * @brief 传感器功能码定义
  *
@@ -32,22 +32,21 @@
 └──────────────┴─────────┘
  */
 #define SENSOR_CODE_WIND_SPEED_AND_DIRECTION 0x11
-#define SENSOR_CODE_SOLAR_RADIATION 0x12
-#define SENSOR_CODE_ANCHOR_CABLE_GAUGE 0x13
-#define SENSOR_CODE_VOLTAGE_CURRENT 0x14
-#define SENSOR_CODE_DISPLACEMENT 0x15
-#define SENSOR_CODE_ATTITUDE_SENSOR 0x16
+#define SENSOR_CODE_SOLAR_RADIATION          0x12
+#define SENSOR_CODE_ANCHOR_CABLE_GAUGE       0x13
+#define SENSOR_CODE_VOLTAGE_CURRENT          0x14
+#define SENSOR_CODE_DISPLACEMENT             0x15
+#define SENSOR_CODE_ATTITUDE_SENSOR          0x16
 #define SENSOR_CODE_INCLINATION_ANGLE_SENSOR 0x17
-#define SENSOR_CODE_PULL_PRESSURE 0x18
-#define SENSOR_CODE_TEMP_HUMI 0x19
+#define SENSOR_CODE_PULL_PRESSURE            0x18
+#define SENSOR_CODE_TEMP_HUMI                0x19
 
-#define SENSOR_CODE_DEVICE_ID 0x01
+#define SENSOR_CODE_DEVICE_ID                0x01
 
-#define SENSOR_ERROR_VALUE 0
+#define SENSOR_ERROR_VALUE                   0
 
 #pragma pack(1)
-typedef struct tagRTU_Sampling_Var_t
-{
+typedef struct tagRTU_Sampling_Var_t {
     uint8_t type;      // 传感器类型
     uint32_t datetime; // 日期时间UTC时间戳：精度秒，24小时制。
     uint16_t ms;       // 毫秒
@@ -57,8 +56,7 @@ typedef struct tagRTU_Sampling_Var_t
 #define RTU_SAMPLING_VAR_T_SIZE 16U
 #pragma pack()
 
-typedef struct tagAPP_Sensor_t
-{
+typedef struct tagAPP_Sensor_t {
     uint8_t code;          // 传感器类型码
     char *name;            // 传感器名字
     SchedulerTask_t task;  // 传感器任务
@@ -68,8 +66,8 @@ typedef struct tagAPP_Sensor_t
 
 uint8_t RTU_Sampling_Var_checksum(RTU_Sampling_Var_t *pvar);
 void RTU_Sampling_Var_encoder(RTU_Sampling_Var_t *pvar);
-uint8_t RTU_Sampling_Var_decoder(const uint8_t *data,RTU_Sampling_Var_t *pvar);
-void RTU_Sampling_Var_get_calibration_time_local(RTU_Sampling_Var_t *pvar,mytime_struct *pdatetime);
+uint8_t RTU_Sampling_Var_decoder(const uint8_t *data, RTU_Sampling_Var_t *pvar);
+void RTU_Sampling_Var_get_calibration_time_local(RTU_Sampling_Var_t *pvar, mtime_t *pdatetime);
 
 void APP_RTU_Sampler_init();
 void APP_RTU_Sampler_handler();

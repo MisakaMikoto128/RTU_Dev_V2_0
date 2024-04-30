@@ -12,13 +12,12 @@
 #include "mtime.h"
 #include <stdio.h>
 
-#define UTC_BASE_YEAR 1970
+#define UTC_BASE_YEAR  1970
 #define MONTH_PER_YEAR 12
-#define DAY_PER_YEAR 365
-#define SEC_PER_DAY 86400
-#define SEC_PER_HOUR 3600
-#define SEC_PER_MIN 60
-
+#define DAY_PER_YEAR   365
+#define SEC_PER_DAY    86400
+#define SEC_PER_HOUR   3600
+#define SEC_PER_MIN    60
 
 /* 每个月的天数 */
 const uint8_t g_day_per_mon[MONTH_PER_YEAR] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -41,20 +40,13 @@ uint8_t applib_dt_is_leap_year(uint16_t year)
     /*----------------------------------------------------------------*/
     /* Code Body                                                      */
     /*----------------------------------------------------------------*/
-    if ((year % 400) == 0)
-    {
+    if ((year % 400) == 0) {
         return 1;
-    }
-    else if ((year % 100) == 0)
-    {
+    } else if ((year % 100) == 0) {
         return 0;
-    }
-    else if ((year % 4) == 0)
-    {
+    } else if ((year % 4) == 0) {
         return 1;
-    }
-    else
-    {
+    } else {
         return 0;
     }
 }
@@ -79,17 +71,13 @@ uint8_t applib_dt_last_day_of_mon(uint8_t month, uint16_t year)
     /*----------------------------------------------------------------*/
     /* Code Body                                                      */
     /*----------------------------------------------------------------*/
-    if ((month == 0) || (month > 12))
-    {
+    if ((month == 0) || (month > 12)) {
         return g_day_per_mon[1] + applib_dt_is_leap_year(year);
     }
 
-    if (month != 2)
-    {
+    if (month != 2) {
         return g_day_per_mon[month - 1];
-    }
-    else
-    {
+    } else {
         return g_day_per_mon[1] + applib_dt_is_leap_year(year);
     }
 }
@@ -112,19 +100,16 @@ uint8_t mtime_get_week(uint16_t year, uint8_t month, uint8_t day)
 
     century_code = year_code = month_code = day_code = 0;
 
-    if (month == 1 || month == 2)
-    {
+    if (month == 1 || month == 2) {
         century_code = (year - 1) / 100;
-        year_code = (year - 1) % 100;
-        month_code = month + 12;
-        day_code = day;
-    }
-    else
-    {
+        year_code    = (year - 1) % 100;
+        month_code   = month + 12;
+        day_code     = day;
+    } else {
         century_code = year / 100;
-        year_code = year % 100;
-        month_code = month;
-        day_code = day;
+        year_code    = year % 100;
+        month_code   = month;
+        day_code     = day;
     }
 
     /* 根据蔡勒公式计算星期 */
@@ -168,7 +153,7 @@ void mtime_utc_sec_2_time(unsigned int utc_sec, mtime_t *result)
 
     /* hour, min, sec */
     /* hour */
-    sec = utc_sec % SEC_PER_DAY;
+    sec           = utc_sec % SEC_PER_DAY;
     result->nHour = sec / SEC_PER_HOUR;
 
     /* min */
@@ -182,36 +167,28 @@ void mtime_utc_sec_2_time(unsigned int utc_sec, mtime_t *result)
     /* year */
     /* year */
     day = utc_sec / SEC_PER_DAY;
-    for (y = UTC_BASE_YEAR; day > 0; y++)
-    {
+    for (y = UTC_BASE_YEAR; day > 0; y++) {
         d = (DAY_PER_YEAR + applib_dt_is_leap_year(y));
-        if (day >= d)
-        {
+        if (day >= d) {
             day -= d;
-        }
-        else
-        {
+        } else {
             break;
         }
     }
 
     result->nYear = y;
 
-    for (m = 1; m < MONTH_PER_YEAR; m++)
-    {
+    for (m = 1; m < MONTH_PER_YEAR; m++) {
         d = applib_dt_last_day_of_mon(m, y);
-        if (day >= d)
-        {
+        if (day >= d) {
             day -= d;
-        }
-        else
-        {
+        } else {
             break;
         }
     }
 
     result->nMonth = m;
-    result->nDay = (uint8_t)(day + 1);
+    result->nDay   = (uint8_t)(day + 1);
     /* 根据给定的日期得到对应的星期 */
     result->nWeek = mtime_get_week(result->nYear, result->nMonth, result->nDay);
 }
@@ -238,20 +215,17 @@ unsigned int mtime_2_utc_sec(mtime_t *currTime)
     /*----------------------------------------------------------------*/
     /* Code Body                                                      */
     /*----------------------------------------------------------------*/
-    if (currTime->nYear < UTC_BASE_YEAR)
-    {
+    if (currTime->nYear < UTC_BASE_YEAR) {
         return 0;
     }
 
     /* year */
-    for (i = UTC_BASE_YEAR; i < currTime->nYear; i++)
-    {
+    for (i = UTC_BASE_YEAR; i < currTime->nYear; i++) {
         no_of_days += (DAY_PER_YEAR + applib_dt_is_leap_year(i));
     }
 
     /* month */
-    for (i = 1; i < currTime->nMonth; i++)
-    {
+    for (i = 1; i < currTime->nMonth; i++) {
         no_of_days += applib_dt_last_day_of_mon((uint8_t)i, currTime->nYear);
     }
 
@@ -284,7 +258,7 @@ char *mtime_format(unsigned int utc_sec, char *pBuf)
 void mtime_add_hours(mtime_t *currTime, unsigned int hours)
 {
     unsigned int timestamp = 0;
-    timestamp = mtime_2_utc_sec(currTime);
+    timestamp              = mtime_2_utc_sec(currTime);
     timestamp += hours * 60UL * 60UL;
     mtime_utc_sec_2_time(timestamp, currTime);
 }
@@ -292,7 +266,7 @@ void mtime_add_hours(mtime_t *currTime, unsigned int hours)
 void mtime_sub_hours(mtime_t *currTime, unsigned int hours)
 {
     unsigned int timestamp = 0;
-    timestamp = mtime_2_utc_sec(currTime);
+    timestamp              = mtime_2_utc_sec(currTime);
     timestamp -= hours * 60UL * 60UL;
     mtime_utc_sec_2_time(timestamp, currTime);
 }

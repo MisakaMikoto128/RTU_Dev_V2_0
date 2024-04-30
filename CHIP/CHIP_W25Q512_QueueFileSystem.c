@@ -9,7 +9,7 @@
  *
  */
 #include "CHIP_W25Q512_QueueFileSystem.h"
-#include "HDL_G4_CPU_Time.h"
+#include "HDL_CPU_Time.h"
 #include <stdlib.h>
 #include <string.h>
 #include "circular_array_queu.h"
@@ -25,24 +25,32 @@ uint8_t w25q512_read_status_reg(uint8_t reg);
 uint8_t w25q512_is_busy();
 int32_t w25q512_erase_one_sector_cmd(uint32_t sector);
 
+int32_t CHIP_W25Q512_read_one_sector(uint32_t sec_idx, uint8_t *buf);
+
 static int CHIP_W25Q512_QFS_start_flush_header();
 uint32_t CHIP_W25Q512_QFS_asyn_pop(uint8_t *buf, uint32_t pop_len);
 
-/*定义逻辑扇区号到物理扇区号的映射*/
-/*NUMB : 编号，NUM : 数量*/
-#define QFS_LOGIC_SECTOR_NUM (W25Q512_SECTOR_NUM - 1UL)
-#define LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_NUMB 1
-#define QFS_PHYSICAL_SECTOR_NUMB(LOGIC_SECTOR_NUMB)  ((LOGIC_SECTOR_NUMB) + LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_NUMB)
+/* 定义逻辑扇区号到物理扇区号的映射 */
+/* INDEX : 索引号， COUNT : 数量 */
 
-typedef enum
-{
+// QFS头部信息存储扇区大小,一个扇区
+#define QFS_HEADER_SECTOR_SIZE 1
+// QFS数据区域逻辑扇区数量,最大为W25Q512_SECTOR_COUNT - 1UL，有一个扇区用于存储头部信息。
+#define QFS_DATA_FILED_LOGIC_SECTOR_COUNT (W25Q512_SECTOR_COUNT / 4 - 1UL)
+// 逻辑扇区号到物理扇区号的偏移.例如这个偏移量等于1时表示QFS从物理扇区编号1开始存储数据
+#define LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_INDEX (W25Q512_SECTOR_COUNT / 4)
+
+#define QFS_HEADER_PHYSICAL_SECTOR_INDEX             (LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_INDEX)
+// QFS的数据存储区域始终开始于首部信息存储扇区之后的一个扇区，也就是物理扇区索引@QFS_HEADER_PHYSICAL_SECTOR_INDEX + 1的位置
+#define QFS_PHYSICAL_SECTOR_INDEX(LOGIC_SECTOR_NUMB) ((LOGIC_SECTOR_NUMB) + QFS_HEADER_PHYSICAL_SECTOR_INDEX + QFS_HEADER_SECTOR_SIZE)
+
+typedef enum {
     QFS_IDLE,
     QFS_WAITING_ERASE_FINISH,
     QFS_WAITING_FINISH,
 } QFS_WriteStateMechine_t;
 
-typedef enum
-{
+typedef enum {
     // 固化数据头状态
     QFS_WRITE_HEADER,
     // 固化队列数据体状态，QFS写位置状态机是每次固化数据头完成后又转到固化数据体状态
@@ -97,25 +105,21 @@ void CHIP_W25Q512_QFS_init()
 
     // 初始化开始固化流程的阈值
     uint32_t tmp_threshold = flush_data2flash_threshold_persentage * 0.01f * QFS_WRITE_QUEUE_CAPACITY;
-    if (tmp_threshold > MIN_FLUSH_DATA_THRESHOLD)
-    {
+    if (tmp_threshold > MIN_FLUSH_DATA_THRESHOLD) {
         flush_data2flash_threshold = tmp_threshold;
     }
 
     // 创建QFS写入缓存队列
     c_arr_queue_create(&qfs_wqueue, qfs_wqueue_buf, sizeof(qfs_wqueue_buf));
 
-    if (CHIP_W25Q512_QFS_isFormated())
-    {
+    if (CHIP_W25Q512_QFS_isFormated()) {
         // 更新当前的状态到内存中
         QFSHeader_t _header;
-        CHIP_W25Q512_read(0, (uint8_t *)&_header, sizeof(QFSHeader_t));
+        CHIP_W25Q512_read(LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_INDEX * W25Q512_SECTOR_SIZE, (uint8_t *)&_header, sizeof(QFSHeader_t));
         _header.font_sec_poped = 0;
-        _header.rear_sec_used = 0;
+        _header.rear_sec_used  = 0;
         // header = _header;
-    }
-    else
-    {
+    } else {
         CHIP_W25Q512_QFS_format();
     }
 }
@@ -126,14 +130,14 @@ void CHIP_W25Q512_QFS_init()
  */
 void CHIP_W25Q512_QFS_format()
 {
-    header.rear_sec_numb = 0;
-    header.rear_sec_used = 0;
-    header.font_sec_numb = 0;
+    header.rear_sec_numb  = 0;
+    header.rear_sec_used  = 0;
+    header.font_sec_numb  = 0;
     header.font_sec_poped = 0;
 
     memset(qfs_wbuffer, 0, W25Q512_SECTOR_SIZE);
     memcpy(qfs_wbuffer, (uint8_t *)&header, sizeof(QFSHeader_t));
-    w25q512_write_one_sector(0, qfs_wbuffer);
+    w25q512_write_one_sector(LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_INDEX, qfs_wbuffer);
 }
 
 /**
@@ -144,10 +148,9 @@ void CHIP_W25Q512_QFS_format()
 int CHIP_W25Q512_QFS_isFormated()
 {
     QFSHeader_t _header = {0};
-    int status = 0;
-    CHIP_W25Q512_read(0, (uint8_t *)&_header, sizeof(QFSHeader_t));
-    if (memcmp("QFS", _header.flag, sizeof("QFS")) == 0)
-    {
+    int status          = 0;
+    CHIP_W25Q512_read(LOGIC_SECTOR_OFFSET_OF_PHYSICAL_SECTOR_INDEX * W25Q512_SECTOR_SIZE, (uint8_t *)&_header, sizeof(QFSHeader_t));
+    if (memcmp("QFS", _header.flag, sizeof("QFS")) == 0) {
         status = 1;
     }
     return status;
@@ -161,11 +164,10 @@ static void CHIP_W25Q512_QFS_start_flush_header_period()
 {
     static uint32_t cpu_tick = 0;
     // n ms 把队列的头部信息写到Flash中一次。
-    if ((HDL_G4_CPU_Time_GetTick() - cpu_tick) > 4000)
-    {
+    if ((HDL_CPU_Time_GetTick() - cpu_tick) > 4000) {
         if (CHIP_W25Q512_QFS_start_flush_header() == 1) // 启动成功
         {
-            cpu_tick = HDL_G4_CPU_Time_GetTick();
+            cpu_tick = HDL_CPU_Time_GetTick();
         }
     }
 }
@@ -173,110 +175,96 @@ static void CHIP_W25Q512_QFS_start_flush_header_period()
 void CHIP_W25Q512_QFS_handler()
 {
     static int page_idx = 0; // Flash写入状态机
-    switch (qfs_wsm)
-    {
-    // 如果当前状态位写数据体，那么获取缓存列表的第一个节点。
-    case QFS_WRITE_QUEUE_BODY:
-        switch (qfs_sm)
-        {
-        case QFS_IDLE:
+    switch (qfs_wsm) {
+        // 如果当前状态位写数据体，那么获取缓存列表的第一个节点。
+        case QFS_WRITE_QUEUE_BODY:
+            switch (qfs_sm) {
+                case QFS_IDLE:
 
-            // 检查队列是否包含一个W25Q512_SECTOR_SIZE的数据
-            if (c_arr_queue_size(&qfs_wqueue) >= flush_data2flash_threshold)
-            {
-                if (!w25q512_is_busy())
-                {
-                    c_arr_queue_out(&qfs_wqueue, qfs_wbuffer, W25Q512_SECTOR_SIZE);
-                    w25q512_erase_one_sector_cmd(QFS_PHYSICAL_SECTOR_NUMB(header.rear_sec_numb));
-                    qfs_sm = QFS_WAITING_ERASE_FINISH;
-                }
+                    // 检查队列是否包含一个W25Q512_SECTOR_SIZE的数据
+                    if (c_arr_queue_size(&qfs_wqueue) >= flush_data2flash_threshold) {
+                        if (!w25q512_is_busy()) {
+                            c_arr_queue_out(&qfs_wqueue, qfs_wbuffer, W25Q512_SECTOR_SIZE);
+                            w25q512_erase_one_sector_cmd(QFS_PHYSICAL_SECTOR_INDEX(header.rear_sec_numb));
+                            qfs_sm = QFS_WAITING_ERASE_FINISH;
+                        }
+                    }
+                    break;
+                case QFS_WAITING_ERASE_FINISH:
+                    if (!w25q512_is_busy()) {
+                        qfs_sm = QFS_WAITING_FINISH;
+                    }
+                    break;
+
+                case QFS_WAITING_FINISH:
+
+                    if (page_idx < W25Q512_SECTOR_SIZE / W25Q512_PAGE_SIZE) {
+                        if (!w25q512_is_busy()) {
+                            uint32_t sector = QFS_PHYSICAL_SECTOR_INDEX(header.rear_sec_numb);
+                            uint8_t *buf    = qfs_wbuffer;
+                            w25q512_write_page_no_erase_no_wait(sector * W25Q512_SECTOR_SIZE + page_idx * W25Q512_PAGE_SIZE,
+                                                                qfs_wbuffer + page_idx * W25Q512_PAGE_SIZE, W25Q512_PAGE_SIZE);
+                            page_idx++;
+                        }
+                    } else
+                    // 写入完成了
+                    {
+                        w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
+
+                        // QFS enqueue
+                        header.rear_sec_numb = (header.rear_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
+
+                        page_idx = 0;
+                        qfs_sm   = QFS_IDLE;
+
+                        // TODO
+                        CHIP_W25Q512_QFS_start_flush_header_period();
+                    }
+                    break;
+                default:
+                    break;
             }
             break;
-        case QFS_WAITING_ERASE_FINISH:
-            if (!w25q512_is_busy())
-            {
-                qfs_sm = QFS_WAITING_FINISH;
-            }
-            break;
+        // 如果当前状态为写数据头，那么切换当前node为数据头缓存节点。
+        case QFS_WRITE_HEADER:
 
-        case QFS_WAITING_FINISH:
+            switch (qfs_sm) {
+                case QFS_IDLE:
+                    if (!w25q512_is_busy()) {
+                        w25q512_erase_one_sector_cmd(0);
+                        qfs_sm = QFS_WAITING_ERASE_FINISH;
+                    }
+                    break;
+                case QFS_WAITING_ERASE_FINISH:
+                    if (!w25q512_is_busy()) {
+                        qfs_sm = QFS_WAITING_FINISH;
+                    }
+                    break;
 
-            if (page_idx < W25Q512_SECTOR_SIZE / W25Q512_PAGE_SIZE)
-            {
-                if (!w25q512_is_busy())
-                {
-                    uint32_t sector = QFS_PHYSICAL_SECTOR_NUMB(header.rear_sec_numb);
-                    uint8_t *buf = qfs_wbuffer;
-                    w25q512_write_page_no_erase_no_wait(sector * W25Q512_SECTOR_SIZE + page_idx * W25Q512_PAGE_SIZE,
-                                                        qfs_wbuffer + page_idx * W25Q512_PAGE_SIZE, W25Q512_PAGE_SIZE);
-                    page_idx++;
-                }
-            }
-            else
-            // 写入完成了
-            {
-                w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
+                case QFS_WAITING_FINISH:
 
-                // QFS enqueue
-                header.rear_sec_numb = (header.rear_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM;
-
-                page_idx = 0;
-                qfs_sm = QFS_IDLE;
-
-                // TODO
-                CHIP_W25Q512_QFS_start_flush_header_period();
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    // 如果当前状态为写数据头，那么切换当前node为数据头缓存节点。
-    case QFS_WRITE_HEADER:
-
-        switch (qfs_sm)
-        {
-        case QFS_IDLE:
-            if (!w25q512_is_busy())
-            {
-                w25q512_erase_one_sector_cmd(0);
-                qfs_sm = QFS_WAITING_ERASE_FINISH;
-            }
-            break;
-        case QFS_WAITING_ERASE_FINISH:
-            if (!w25q512_is_busy())
-            {
-                qfs_sm = QFS_WAITING_FINISH;
-            }
-            break;
-
-        case QFS_WAITING_FINISH:
-
-            if (page_idx < W25Q512_SECTOR_SIZE / W25Q512_PAGE_SIZE)
-            {
-                if (!w25q512_is_busy())
-                {
-                    uint32_t sector = 0;
-                    uint8_t *buf = qfs_wbuffer;
-                    w25q512_write_page_no_erase_no_wait(sector * W25Q512_SECTOR_SIZE + page_idx * W25Q512_PAGE_SIZE, buf + page_idx * W25Q512_PAGE_SIZE, W25Q512_PAGE_SIZE);
-                    page_idx++;
-                }
-            }
-            else
-            // 写入完成了
-            {
-                w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
-                page_idx = 0;
-                qfs_wsm = QFS_WRITE_QUEUE_BODY;
-                qfs_sm = QFS_IDLE;
+                    if (page_idx < W25Q512_SECTOR_SIZE / W25Q512_PAGE_SIZE) {
+                        if (!w25q512_is_busy()) {
+                            uint32_t sector = 0;
+                            uint8_t *buf    = qfs_wbuffer;
+                            w25q512_write_page_no_erase_no_wait(sector * W25Q512_SECTOR_SIZE + page_idx * W25Q512_PAGE_SIZE, buf + page_idx * W25Q512_PAGE_SIZE, W25Q512_PAGE_SIZE);
+                            page_idx++;
+                        }
+                    } else
+                    // 写入完成了
+                    {
+                        w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
+                        page_idx = 0;
+                        qfs_wsm  = QFS_WRITE_QUEUE_BODY;
+                        qfs_sm   = QFS_IDLE;
+                    }
+                    break;
+                default:
+                    break;
             }
             break;
         default:
             break;
-        }
-        break;
-    default:
-        break;
     }
 }
 
@@ -291,8 +279,7 @@ uint32_t CHIP_W25Q512_QFS_push(uint8_t *buf, uint32_t len)
 {
     int ret = 0;
     // 如果QFS满了，就不允许写入，即使写入缓存表能写
-    if (!CHIP_W25Q512_QFS_is_full())
-    {
+    if (!CHIP_W25Q512_QFS_is_full()) {
         ret = c_arr_queue_in(&qfs_wqueue, buf, len);
     }
 
@@ -308,7 +295,7 @@ uint32_t CHIP_W25Q512_QFS_push(uint8_t *buf, uint32_t len)
  */
 uint32_t CHIP_W25Q512_QFS_get_font_address()
 {
-    return QFS_PHYSICAL_SECTOR_NUMB(header.font_sec_numb) * W25Q512_SECTOR_SIZE;
+    return QFS_PHYSICAL_SECTOR_INDEX(header.font_sec_numb) * W25Q512_SECTOR_SIZE;
 }
 
 /**
@@ -318,7 +305,7 @@ uint32_t CHIP_W25Q512_QFS_get_font_address()
  */
 uint32_t CHIP_W25Q512_QFS_get_rear_address()
 {
-    return QFS_PHYSICAL_SECTOR_NUMB(header.rear_sec_numb) * W25Q512_SECTOR_SIZE;
+    return QFS_PHYSICAL_SECTOR_INDEX(header.rear_sec_numb) * W25Q512_SECTOR_SIZE;
 }
 
 ///*************************QFS队列相关部分*******************************/
@@ -329,7 +316,7 @@ uint32_t CHIP_W25Q512_QFS_get_rear_address()
  */
 uint32_t CHIP_W25Q512_QFS_size()
 {
-    return (header.rear_sec_numb + QFS_LOGIC_SECTOR_NUM - header.font_sec_numb) % QFS_LOGIC_SECTOR_NUM;
+    return (header.rear_sec_numb + QFS_DATA_FILED_LOGIC_SECTOR_COUNT - header.font_sec_numb) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
 }
 
 uint8_t CHIP_W25Q512_QFS_is_empty()
@@ -339,14 +326,13 @@ uint8_t CHIP_W25Q512_QFS_is_empty()
 
 uint8_t CHIP_W25Q512_QFS_is_full()
 {
-    return (header.rear_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM == header.font_sec_numb;
+    return (header.rear_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT == header.font_sec_numb;
 }
-
 
 /**
  * @brief 清空QFS队列
- * 
- * @return uint8_t 
+ *
+ * @return uint8_t
  */
 uint8_t CHIP_W25Q512_QFS_make_empty()
 {
@@ -355,16 +341,16 @@ uint8_t CHIP_W25Q512_QFS_make_empty()
     // 使得队列为空
     header.font_sec_numb = header.rear_sec_numb;
 
-    // 清空已经出队的字节数，避免对 
+    // 清空已经出队的字节数，避免对
     // CHIP_W25Q512_QFS_asyn_read,CHIP_W25Q512_QFS_asyn_pop,
     // CHIP_W25Q512_QFS_byte_size,CHIP_W25Q512_QFS_asyn_readable_byte_size
-    // 和 CHIP_W25Q512_QFS_pop 
+    // 和 CHIP_W25Q512_QFS_pop
     // 方法造成影响
     header.font_sec_poped = 0;
 
-    //因为QFS状态机只是在改变rear_sec_numb，
-    //所以无论现在处于何种状态修改font_sec_numb都不影响写入过程
-	return 0;
+    // 因为QFS状态机只是在改变rear_sec_numb，
+    // 所以无论现在处于何种状态修改font_sec_numb都不影响写入过程
+    return 0;
 }
 
 /**
@@ -379,15 +365,12 @@ uint32_t CHIP_W25Q512_QFS_pop(uint8_t *buf, uint32_t pop_len)
     uint32_t ret = 0;
     uint32_t res = 0;
 
-    while (pop_len > 0 && !CHIP_W25Q512_QFS_is_empty())
-    {
+    while (pop_len > 0 && !CHIP_W25Q512_QFS_is_empty()) {
         // 当前font所在扇区剩数据大小
         res = W25Q512_SECTOR_SIZE - header.font_sec_poped;
         // 如果当前font所在扇区剩余数据大小大于等于pop_len的数据，那么直接读取
-        if (res >= pop_len)
-        {
-            if (buf != NULL)
-            {
+        if (res >= pop_len) {
+            if (buf != NULL) {
                 w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
                 CHIP_W25Q512_read(CHIP_W25Q512_QFS_get_font_address() + header.font_sec_poped, buf, pop_len);
             }
@@ -395,24 +378,20 @@ uint32_t CHIP_W25Q512_QFS_pop(uint8_t *buf, uint32_t pop_len)
             header.font_sec_poped += pop_len;
             // 如果当前font所在扇区已经读取了W25Q512_SECTOR_SIZE字节的数据，就相当于一次扇区pop queue
             // 这里会保证font_sec_poped只会增加到W25Q512_SECTOR_SIZE
-            if (header.font_sec_poped == W25Q512_SECTOR_SIZE)
-            {
+            if (header.font_sec_poped == W25Q512_SECTOR_SIZE) {
                 header.font_sec_poped = 0;
-                header.font_sec_numb = (header.font_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM;
+                header.font_sec_numb  = (header.font_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
             }
 
             ret += pop_len;
             pop_len = 0;
-        }
-        else
-        {
-            if (buf != NULL)
-            {
+        } else {
+            if (buf != NULL) {
                 w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
                 CHIP_W25Q512_read(CHIP_W25Q512_QFS_get_font_address() + header.font_sec_poped, buf, res);
             }
 
-            header.font_sec_numb = (header.font_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM;
+            header.font_sec_numb  = (header.font_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
             header.font_sec_poped = 0;
 
             buf += res;
@@ -438,15 +417,12 @@ uint32_t CHIP_W25Q512_QFS_asyn_pop(uint8_t *buf, uint32_t pop_len)
     uint32_t ret = 0;
     uint32_t res = 0;
 
-    while (pop_len > 0 && !CHIP_W25Q512_QFS_is_empty())
-    {
+    while (pop_len > 0 && !CHIP_W25Q512_QFS_is_empty()) {
         // 当前font所在扇区剩数据大小
         res = W25Q512_SECTOR_SIZE - header.font_sec_poped;
         // 如果当前font所在扇区剩余数据大小大于等于pop_len的数据，那么直接读取
-        if (res >= pop_len)
-        {
-            if (buf != NULL)
-            {
+        if (res >= pop_len) {
+            if (buf != NULL) {
                 w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
                 CHIP_W25Q512_read(CHIP_W25Q512_QFS_get_font_address() + header.font_sec_poped, buf, pop_len);
             }
@@ -454,24 +430,20 @@ uint32_t CHIP_W25Q512_QFS_asyn_pop(uint8_t *buf, uint32_t pop_len)
             header.font_sec_poped += pop_len;
             // 如果当前font所在扇区已经读取了W25Q512_SECTOR_SIZE字节的数据，就相当于一次扇区pop queue
             // 这里会保证font_sec_poped只会增加到W25Q512_SECTOR_SIZE
-            if (header.font_sec_poped == W25Q512_SECTOR_SIZE)
-            {
+            if (header.font_sec_poped == W25Q512_SECTOR_SIZE) {
                 header.font_sec_poped = 0;
-                header.font_sec_numb = (header.font_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM;
+                header.font_sec_numb  = (header.font_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
             }
 
             ret += pop_len;
             pop_len = 0;
-        }
-        else
-        {
-            if (buf != NULL)
-            {
+        } else {
+            if (buf != NULL) {
                 w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
                 CHIP_W25Q512_read(CHIP_W25Q512_QFS_get_font_address() + header.font_sec_poped, buf, res);
             }
 
-            header.font_sec_numb = (header.font_sec_numb + 1) % QFS_LOGIC_SECTOR_NUM;
+            header.font_sec_numb  = (header.font_sec_numb + 1) % QFS_DATA_FILED_LOGIC_SECTOR_COUNT;
             header.font_sec_poped = 0;
 
             buf += res;
@@ -503,69 +475,56 @@ uint32_t CHIP_W25Q512_QFS_asyn_read(uint8_t *buf, uint32_t len)
     // 两个结束条件
     //  1. 读到了len个数据
     //  2. 没有允许读取的数据了
-    while (len > 0)
-    {
-        switch (qfs_wsm)
-        {
-        case QFS_WRITE_QUEUE_BODY:
-            // CHIP_W25Q512_QFS_asyn_readable()
-            if (qfs_sm == QFS_IDLE)
-            {
-                // 首先是要读取QFS中存放到物理存储的数据
-                if (CHIP_W25Q512_QFS_is_empty())
-                {
+    while (len > 0) {
+        switch (qfs_wsm) {
+            case QFS_WRITE_QUEUE_BODY:
+                // CHIP_W25Q512_QFS_asyn_readable()
+                if (qfs_sm == QFS_IDLE) {
+                    // 首先是要读取QFS中存放到物理存储的数据
+                    if (CHIP_W25Q512_QFS_is_empty()) {
+                        tmp = c_arr_queue_out(&qfs_wqueue, buf, len);
+                        len -= tmp;
+                        buf += tmp;
+                        ret += tmp;
+                        cache_queue_read_amount += tmp;
+                        if (c_arr_queue_is_empty(&qfs_wqueue)) {
+                            //@measure
+                            total_read_amount += ret;
+                            return ret;
+                        }
+                    } else {
+                        tmp = CHIP_W25Q512_QFS_asyn_pop(buf, len);
+                        len -= tmp;
+                        buf += tmp;
+                        ret += tmp;
+                        physical_storage_read_amount += tmp;
+                    }
+                } else {
+                    //@measure
+                    total_read_amount += ret;
+                    return ret;
+                }
+                break;
+            case QFS_WRITE_HEADER:
+                if (CHIP_W25Q512_QFS_is_empty()) {
                     tmp = c_arr_queue_out(&qfs_wqueue, buf, len);
                     len -= tmp;
                     buf += tmp;
                     ret += tmp;
                     cache_queue_read_amount += tmp;
-                    if (c_arr_queue_is_empty(&qfs_wqueue))
-                    {
+                    if (c_arr_queue_is_empty(&qfs_wqueue)) {
                         //@measure
                         total_read_amount += ret;
                         return ret;
                     }
-                }
-                else
-                {
-                    tmp = CHIP_W25Q512_QFS_asyn_pop(buf, len);
-                    len -= tmp;
-                    buf += tmp;
-                    ret += tmp;
-                    physical_storage_read_amount += tmp;
-                }
-            }
-            else
-            {
-                //@measure
-                total_read_amount += ret;
-                return ret;
-            }
-            break;
-        case QFS_WRITE_HEADER:
-            if (CHIP_W25Q512_QFS_is_empty())
-            {
-                tmp = c_arr_queue_out(&qfs_wqueue, buf, len);
-                len -= tmp;
-                buf += tmp;
-                ret += tmp;
-                cache_queue_read_amount += tmp;
-                if (c_arr_queue_is_empty(&qfs_wqueue))
-                {
+                } else {
                     //@measure
                     total_read_amount += ret;
                     return ret;
                 }
-            }
-            else
-            {
-                //@measure
-                total_read_amount += ret;
-                return ret;
-            }
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
         }
     }
     //@measure
@@ -591,8 +550,7 @@ uint8_t CHIP_W25Q512_QFS_asyn_readable()
 uint32_t CHIP_W25Q512_QFS_asyn_readable_byte_size()
 {
     uint32_t ret = 0;
-    if (CHIP_W25Q512_QFS_asyn_readable())
-    {
+    if (CHIP_W25Q512_QFS_asyn_readable()) {
         ret = CHIP_W25Q512_QFS_byte_size();
     }
     return ret;
@@ -608,12 +566,11 @@ uint32_t CHIP_W25Q512_QFS_asyn_readable_byte_size()
 static int CHIP_W25Q512_QFS_start_flush_header()
 {
     int ret = 0;
-    if (qfs_sm == QFS_IDLE && qfs_wsm == QFS_WRITE_QUEUE_BODY)
-    {
+    if (qfs_sm == QFS_IDLE && qfs_wsm == QFS_WRITE_QUEUE_BODY) {
         memset(qfs_wbuffer, 0, W25Q512_SECTOR_SIZE);
         memcpy(qfs_wbuffer, (uint8_t *)&header, sizeof(QFSHeader_t));
         qfs_wsm = QFS_WRITE_HEADER;
-        ret = 1;
+        ret     = 1;
     }
     return ret;
 }
@@ -629,10 +586,8 @@ static int CHIP_W25Q512_QFS_start_flush_header()
 uint32_t CHIP_W25Q512_QFS_font(uint8_t *buf)
 {
     uint32_t ret = 0;
-    if (!CHIP_W25Q512_QFS_is_empty())
-    {
-        if (buf != NULL)
-        {
+    if (!CHIP_W25Q512_QFS_is_empty()) {
+        if (buf != NULL) {
             CHIP_W25Q512_read(CHIP_W25Q512_QFS_get_font_address(), buf, W25Q512_SECTOR_SIZE);
         }
         ret = 1;
@@ -658,4 +613,23 @@ uint32_t CHIP_W25Q512_QFS_byte_size()
 uint8_t CHIP_W25Q512_QFS_is_idle()
 {
     return (uint8_t)(qfs_sm == QFS_IDLE);
+}
+
+//
+
+/**
+ * @brief W25Q512读取一个扇区的数据。
+ *
+ * @param sec_idx 扇区物理索引。
+ * @param buf 确保buf有足够的空间存放一个扇区的数据。
+ * @return int32_t 1成功，0失败。
+ */
+int32_t CHIP_W25Q512_read_one_sector(uint32_t sec_idx, uint8_t *buf)
+{
+    int32_t ret = 0;
+    if (buf != NULL) {
+        CHIP_W25Q512_read(sec_idx * W25Q512_SECTOR_SIZE, buf, W25Q512_SECTOR_SIZE);
+        ret = 1;
+    }
+    return ret;
 }

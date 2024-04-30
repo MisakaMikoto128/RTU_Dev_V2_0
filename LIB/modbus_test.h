@@ -1,12 +1,12 @@
 /**
  * @file modbus_test.h
  * @author Liu Yuanlin (liuyuanlins@outlook.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2022-10-21
- * 
+ *
  * @copyright Copyright (c) 2022 Liu Yuanlin Personal.
- * 
+ *
  */
 
 #ifndef MODBUS_TEST_H

@@ -19,12 +19,11 @@ uint8_t c_arr_queue_dequeue(CircularArrayQueue Q, ElementType *pX);
 uint32_t c_arr_queue_in(CircularArrayQueue Q, const ElementType *pBuf, uint32_t bufSize);
 uint32_t c_arr_queue_out(CircularArrayQueue Q, ElementType *pBuf, uint32_t bufSize);
 
-typedef struct CircularArrayQueueRecord
-{
+typedef struct CircularArrayQueueRecord {
     int Capacity;
     int Front;
     int Rear;
-    ElementType * pData;
-}CircularArrayQueue_t;
+    ElementType *pData;
+} CircularArrayQueue_t;
 
 #endif /* _CircularArrayQueue_h */

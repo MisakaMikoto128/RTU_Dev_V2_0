@@ -1,9 +1,9 @@
 #include "sc_byte_buffer.h"
 void sc_byte_buffer_init(psc_byte_buffer p, byte *data, int capacity)
 {
-    p->data = data;
+    p->data     = data;
     p->capacity = capacity;
-    p->size = 0;
+    p->size     = 0;
 }
 
 int sc_byte_buffer_size(psc_byte_buffer p)
@@ -23,8 +23,7 @@ Return:
 */
 int sc_byte_buffer_push(psc_byte_buffer p, byte c)
 {
-    if (p->size < p->capacity)
-    {
+    if (p->size < p->capacity) {
         p->data[p->size++] = c;
         return 1;
     }
@@ -33,16 +32,14 @@ int sc_byte_buffer_push(psc_byte_buffer p, byte c)
 
 /*
 Return:
-    successful pushed data length. This function just considering the input strings as a 
+    successful pushed data length. This function just considering the input strings as a
     uint8_t type array.
 */
 int sc_byte_buffer_push_str(psc_byte_buffer p, byte *str)
 {
     int i;
-    for (i = 0; str[i] != '\0'; i++)
-    {
-        if (sc_byte_buffer_push(p, str[i]) == 0)
-        {
+    for (i = 0; str[i] != '\0'; i++) {
+        if (sc_byte_buffer_push(p, str[i]) == 0) {
             break;
         }
     }
@@ -55,10 +52,8 @@ Return: 实际存放的字节数。
 int sc_byte_buffer_push_data(psc_byte_buffer p, const byte *data, int len)
 {
     int i;
-    for (i = 0; i < len; i++)
-    {
-        if (sc_byte_buffer_push(p, data[i]) == 0)
-        {
+    for (i = 0; i < len; i++) {
+        if (sc_byte_buffer_push(p, data[i]) == 0) {
             break;
         }
     }
@@ -74,8 +69,7 @@ int sc_byte_buffer_push_data(psc_byte_buffer p, const byte *data, int len)
  */
 int sc_byte_buffer_set_size(psc_byte_buffer p, int size)
 {
-    if (size > p->capacity)
-    {
+    if (size > p->capacity) {
         return 0;
     }
     p->size = size;

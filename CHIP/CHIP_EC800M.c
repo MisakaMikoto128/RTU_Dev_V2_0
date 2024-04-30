@@ -10,9 +10,8 @@
  *
  */
 #include "CHIP_EC800M.h"
-#include "HDL_G4_CPU_Time.h"
+#include "HDL_CPU_Time.h"
 #define __CHIP_EC800M_DEBUG 0
-
 
 /**
  * @brief 用于已经链接到板子的模块使用串口直接与模块通信，用于调试
@@ -31,27 +30,27 @@ void CHIP_EC800M_Init()
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE);
     /**/
-    GPIO_InitStruct.Pin = RST_4G_Pin | PEN_4G_Pin;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = RST_4G_Pin | PEN_4G_Pin;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
     /**/
-    GPIO_InitStruct.Pin = DTR_4G_Pin;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = DTR_4G_Pin;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(DTR_4G_GPIO_Port, &GPIO_InitStruct);
 
     /**/
-    GPIO_InitStruct.Pin = RI_4G_Pin;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = RI_4G_Pin;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_INPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(RI_4G_GPIO_Port, &GPIO_InitStruct);
 
     // /**/
@@ -77,7 +76,7 @@ void CHIP_EC800M_Init()
 
     CHIP_EC800M_PowerOn();
     CHIP_EC800M_WakeupOff();
-    //TODO:修改为osDelay
+    // TODO:修改为osDelay
     HDL_CPU_Time_DelayMs(33);
     CHIP_EC800M_ResetOn();
 }
@@ -90,8 +89,7 @@ void EXTI15_10_IRQHandler(void)
     /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
     /* USER CODE END EXTI15_10_IRQn 0 */
-    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_12) != RESET)
-    {
+    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_12) != RESET) {
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_12);
         /* USER CODE BEGIN LL_EXTI_LINE_12 */
 
@@ -102,8 +100,6 @@ void EXTI15_10_IRQHandler(void)
     /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
-
-
 void CHIP_EC800M_PowerOn()
 {
     LL_GPIO_SetOutputPin(PEN_4G_GPIO_Port, PEN_4G_Pin);
@@ -111,7 +107,7 @@ void CHIP_EC800M_PowerOn()
 
 /**
  * @brief 切断模块供电。
- * 
+ *
  */
 void CHIP_EC800M_PowerOff()
 {
@@ -120,7 +116,7 @@ void CHIP_EC800M_PowerOff()
 
 /**
  * @brief DTR用来唤醒睡眠的模块，置为高电平是可以唤醒。置为低电平不产生作用。
- * 
+ *
  */
 void CHIP_EC800M_WakeupOff()
 {
@@ -129,7 +125,7 @@ void CHIP_EC800M_WakeupOff()
 
 /**
  * @brief DTR用来唤醒睡眠的模块，置为高电平是可以唤醒。置为低电平不产生作用。
- * 
+ *
  */
 void CHIP_EC800M_WakeupOn()
 {

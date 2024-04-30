@@ -1,14 +1,14 @@
 /**
-* @file cqueue.c
-* @author Liu Yuanlin (liuyuanlins@outlook.com)
-* @brief
-* @version 0.1
-* @date 2023-09-13
-* @last modified 2023-09-13
-*
-* @copyright Copyright (c) 2023 Liu Yuanlin Personal.
-*
-*/
+ * @file cqueue.c
+ * @author Liu Yuanlin (liuyuanlins@outlook.com)
+ * @brief
+ * @version 0.1
+ * @date 2023-09-13
+ * @last modified 2023-09-13
+ *
+ * @copyright Copyright (c) 2023 Liu Yuanlin Personal.
+ *
+ */
 #include "cqueue.h"
 
 /**
@@ -23,12 +23,12 @@
 uint8_t cqueue_create(CQueue Q, CObject_t pBuf, uint32_t uiQueueLength, uint32_t uiItemSize)
 {
     Q->Capacity = uiQueueLength;
-    Q->pData = pBuf;
+    Q->pData    = pBuf;
     Q->ItemSize = uiItemSize;
 
     // Make empty
     cqueue_make_empty(Q);
-	return 0;
+    return 0;
 }
 
 /**
@@ -41,13 +41,12 @@ uint8_t cqueue_create(CQueue Q, CObject_t pBuf, uint32_t uiQueueLength, uint32_t
 uint8_t cqueue_enqueue(CQueue Q, const CObject_t obj)
 {
     uint8_t ret = 0;
-    if (!cqueue_is_full(Q))
-    {
+    if (!cqueue_is_full(Q)) {
         uint8_t *pDst = (uint8_t *)(Q->pData) + Q->Rear * Q->ItemSize;
         uint8_t *pSrc = (uint8_t *)obj;
         memcpy(pDst, pSrc, Q->ItemSize);
         Q->Rear = (Q->Rear + 1) % Q->Capacity;
-        ret = 1;
+        ret     = 1;
     }
     return ret;
 }
@@ -62,15 +61,14 @@ uint8_t cqueue_enqueue(CQueue Q, const CObject_t obj)
 uint8_t cqueue_dequeue(CQueue Q, CObject_t obj)
 {
     uint8_t ret = 0;
-    if (!cqueue_is_empty(Q))
-    {
+    if (!cqueue_is_empty(Q)) {
         uint8_t *pDst = (uint8_t *)obj;
         uint8_t *pSrc = (uint8_t *)(Q->pData) + Q->Front * Q->ItemSize;
         // font
         memcpy(pDst, pSrc, Q->ItemSize);
         // dequeue
         Q->Front = (Q->Front + 1) % Q->Capacity;
-        ret = 1;
+        ret      = 1;
     }
 
     return ret;
@@ -86,10 +84,9 @@ uint8_t cqueue_dequeue(CQueue Q, CObject_t obj)
  */
 uint32_t cqueue_in(CQueue Q, const CObject_t pBuf, uint32_t bufSize)
 {
-    uint32_t ret = 0;
+    uint32_t ret      = 0;
     uint8_t *pBufTemp = pBuf;
-    while (!cqueue_is_full(Q) && bufSize > 0)
-    {
+    while (!cqueue_is_full(Q) && bufSize > 0) {
         uint8_t *pDst = (uint8_t *)(Q->pData) + Q->Rear * Q->ItemSize;
         uint8_t *pSrc = (uint8_t *)pBufTemp;
         memcpy(pDst, pSrc, Q->ItemSize);
@@ -115,8 +112,7 @@ uint32_t cqueue_out(CQueue Q, CObject_t pBuf, uint32_t bufSize)
     uint32_t ret = 0;
 
     uint8_t *pBufTemp = pBuf;
-    while (!cqueue_is_empty(Q) && bufSize > 0)
-    {
+    while (!cqueue_is_empty(Q) && bufSize > 0) {
         uint8_t *pDst = (uint8_t *)pBufTemp;
         uint8_t *pSrc = (uint8_t *)(Q->pData) + Q->Front * Q->ItemSize;
         // font

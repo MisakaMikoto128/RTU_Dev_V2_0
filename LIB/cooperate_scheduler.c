@@ -41,8 +41,7 @@ static float oen_tick_time = 1; // ms
 bool Functional_execute(Functional_t *functional)
 {
     bool exe_source_free = false;
-    if (functional->fun != NULL)
-    {
+    if (functional->fun != NULL) {
         exe_source_free = functional->fun(functional->arg);
     }
     return exe_source_free;
@@ -63,14 +62,14 @@ void cooperate_scheduler_init()
  */
 void cooperate_scheduler_handler()
 {
-    static struct sc_list *it = NULL;
-    static CooperativeGroup_t *group = NULL;
+    static struct sc_list *it               = NULL;
+    static CooperativeGroup_t *group        = NULL;
     static const struct sc_list *group_list = &_gcooperate_scheduler.group_list;
 
     static struct sc_list *it_task = NULL;
-    static TaskNode_t *task = NULL;
+    static TaskNode_t *task        = NULL;
     // Group所共用的资源是否是空闲的
-    static bool exe_source_free = false;
+    static bool exe_source_free  = false;
     static struct sc_list *poped = NULL;
     sc_list_foreach(group_list, it)
     {
@@ -78,27 +77,20 @@ void cooperate_scheduler_handler()
         sc_list_foreach(&group->task_list, it_task)
         {
             task = sc_list_entry(it_task, TaskNode_t, next);
-            if (scheduler_get_cpu_tick() >= (task->register_tick + task->delay_before_first_exe))
-            {
-                if (task->exe_cnt < task->exe_times)
-                {
+            if (scheduler_get_cpu_tick() >= (task->register_tick + task->delay_before_first_exe)) {
+                if (task->exe_cnt < task->exe_times) {
                     // 这里一定是>=，如果是 > ，那么在1 cpu tick间隔的时候时间上是2cpu tick执行一次。
                     // 这里不允许period为0，不然就会失去调度作用。
                     // 这里需要保证一定的实时性
-                    if ((scheduler_get_cpu_tick() - task->last_exe_tick) >= task->period)
-                    {
+                    if ((scheduler_get_cpu_tick() - task->last_exe_tick) >= task->period) {
                         exe_source_free = Functional_execute(&task->fun);
-                        if (exe_source_free)
-                        {
+                        if (exe_source_free) {
                             task->_elapsed_tick_since_last_exe = scheduler_get_cpu_tick() - task->last_exe_tick;
-                            task->_exe_tick_error = task->_elapsed_tick_since_last_exe - 2 * task->period;
-                            if (task->_exe_tick_error > 0)
-                            {
+                            task->_exe_tick_error              = task->_elapsed_tick_since_last_exe - 2 * task->period;
+                            if (task->_exe_tick_error > 0) {
                                 // 调整后的上一次的执行时刻
                                 task->last_exe_tick = scheduler_get_cpu_tick();
-                            }
-                            else
-                            {
+                            } else {
                                 task->last_exe_tick += task->period;
                             }
                             task->exe_cnt++;
@@ -106,18 +98,13 @@ void cooperate_scheduler_handler()
 
                             poped = sc_list_pop_head(&group->task_list);
                             sc_list_add_tail(&group->task_list, poped);
-                        }
-                        else
-                        {
+                        } else {
                             task->_elapsed_tick_since_last_exe = scheduler_get_cpu_tick() - task->last_exe_tick;
-                            task->_exe_tick_error = task->_elapsed_tick_since_last_exe - 2 * task->period;
-                            if (task->_exe_tick_error > 0)
-                            {
+                            task->_exe_tick_error              = task->_elapsed_tick_since_last_exe - 2 * task->period;
+                            if (task->_exe_tick_error > 0) {
                                 // 调整后的上一次的执行时刻
                                 task->last_exe_tick = scheduler_get_cpu_tick();
-                            }
-                            else
-                            {
+                            } else {
                                 // 这个任务这次发现资源忙以后会等待1个tick再去执行Functional_execute看资源是否可用
                                 task->last_exe_tick += group->min_period;
                             }
@@ -133,8 +120,7 @@ void cooperate_scheduler_handler()
 bool cooperate_scheduler_register(CooperativeGroup_t *group)
 {
     bool ret = false;
-    if (group != NULL)
-    {
+    if (group != NULL) {
         group->min_period = 1;
         sc_list_init(&group->next);
         sc_list_add_tail(&_gcooperate_scheduler.group_list, &group->next);
@@ -146,17 +132,15 @@ bool cooperate_scheduler_register(CooperativeGroup_t *group)
 bool cooperate_scheduler_is_group_registered(CooperativeGroup_t *group)
 {
     bool ret = false;
-    if (group != NULL)
-    {
-        struct sc_list *it = NULL;
+    if (group != NULL) {
+        struct sc_list *it         = NULL;
         CooperativeGroup_t *_group = NULL;
         struct sc_list *item, *tmp;
 
         sc_list_foreach_safe(&_gcooperate_scheduler.group_list, tmp, it)
         {
             _group = sc_list_entry(it, CooperativeGroup_t, next);
-            if (_group == group)
-            {
+            if (_group == group) {
                 ret = true;
                 break;
             }
@@ -168,17 +152,15 @@ bool cooperate_scheduler_is_group_registered(CooperativeGroup_t *group)
 bool cooperate_scheduler_unregister(CooperativeGroup_t *group)
 {
     bool ret = false;
-    if (group != NULL)
-    {
-        struct sc_list *it = NULL;
+    if (group != NULL) {
+        struct sc_list *it         = NULL;
         CooperativeGroup_t *_group = NULL;
         struct sc_list *item, *tmp;
 
         sc_list_foreach_safe(&_gcooperate_scheduler.group_list, tmp, it)
         {
             _group = sc_list_entry(it, CooperativeGroup_t, next);
-            if (_group == group)
-            {
+            if (_group == group) {
                 sc_list_del(&_gcooperate_scheduler.group_list, &_group->next);
                 ret = true;
                 break;
@@ -198,11 +180,11 @@ void cooperate_group_init(CooperativeGroup_t *group)
  * 任务组中的任务都会占用同一个全局资源，每个任务占用的时间可能不一样，这里设置
  * 一个最小的占用时间，用于任务组内任务请求资源失败的延时。设置为最小是为了保证
  * 调度频率的准确性。
- * 
- * @param group 
+ *
+ * @param group
  * @param ms > 1
  */
-void cooperate_group_set_min_resoure_occupation_time(CooperativeGroup_t* group,uint32_t ms)
+void cooperate_group_set_min_resoure_occupation_time(CooperativeGroup_t *group, uint32_t ms)
 {
     group->min_period = ms / oen_tick_time;
     group->min_period = group->min_period == 0 ? 1 : group->min_period;
@@ -219,10 +201,9 @@ void cooperate_group_set_min_resoure_occupation_time(CooperativeGroup_t* group,u
 bool cooperate_group_register(CooperativeGroup_t *group, TaskNode_t *task)
 {
     bool ret = false;
-    if (task != NULL)
-    {
+    if (task != NULL) {
         task->register_tick = scheduler_get_cpu_tick();
-        task->period = task->period == 0 ? 1 : task->period;
+        task->period        = task->period == 0 ? 1 : task->period;
         sc_list_init(&task->next);
         sc_list_add_tail(&group->task_list, &task->next);
         ret = true;
@@ -241,17 +222,15 @@ bool cooperate_group_register(CooperativeGroup_t *group, TaskNode_t *task)
 bool cooperate_group_is_task_registered(CooperativeGroup_t *group, TaskNode_t *task)
 {
     bool ret = false;
-    if (task != NULL)
-    {
+    if (task != NULL) {
         struct sc_list *it = NULL;
-        TaskNode_t *_task = NULL;
+        TaskNode_t *_task  = NULL;
         struct sc_list *item, *tmp;
 
         sc_list_foreach_safe(&group->task_list, tmp, it)
         {
             _task = sc_list_entry(it, TaskNode_t, next);
-            if (_task == task)
-            {
+            if (_task == task) {
                 ret = true;
                 break;
             }
@@ -270,17 +249,15 @@ bool cooperate_group_is_task_registered(CooperativeGroup_t *group, TaskNode_t *t
 bool cooperate_group_unregister(CooperativeGroup_t *group, TaskNode_t *task)
 {
     bool ret = false;
-    if (task != NULL)
-    {
+    if (task != NULL) {
         struct sc_list *it = NULL;
-        TaskNode_t *_task = NULL;
+        TaskNode_t *_task  = NULL;
         struct sc_list *item, *tmp;
 
         sc_list_foreach_safe(&group->task_list, tmp, it)
         {
             _task = sc_list_entry(it, TaskNode_t, next);
-            if (_task == task)
-            {
+            if (_task == task) {
                 sc_list_del(&group->task_list, &_task->next);
                 ret = true;
                 break;
@@ -299,8 +276,7 @@ bool cooperate_group_unregister(CooperativeGroup_t *group, TaskNode_t *task)
  */
 void cooperate_scheduler_set_task_freq(TaskNode_t *task, int freq)
 {
-    if (task != NULL)
-    {
+    if (task != NULL) {
         task->period = 1000.0f / freq / oen_tick_time;
     }
 }

@@ -12,8 +12,8 @@
 #include "scheduler.h"
 #include "APP_Sampler.h"
 #include "BFL_RTU_Packet.h"
-#include "test.h"
-#include "mytime.h"
+
+#include "mtime.h"
 #include "log.h"
 #include <string.h>
 #include <stdint.h>
@@ -30,18 +30,18 @@ APP_Sensor_t attitude_sensor =
         .name = "attitude sensor",
         .task = {
             .exe_times = SCHEDULER_EXE_TIMES_INF,
-            .fun = task_sampler_request,
-            .period = 1000,
+            .fun       = task_sampler_request,
+            .period    = 1000,
             // 延时1500 tick开始调度，防止有些器件刚上电无法读取
             .delay_before_first_exe = 1500,
         },
         .handler = sensor_response_handler,
 };
 
-#define _MODBUS_HANDLER hModbusRTU4
-#define _MODBUS_SLAVER_ADDR 0x50
+#define _MODBUS_HANDLER        hModbusRTU4
+#define _MODBUS_SLAVER_ADDR    0x50
 #define _MODBUS_SLAVER_REGADDR 0x003D
-#define _MODBUS_READ_REG_NUM 3
+#define _MODBUS_READ_REG_NUM   3
 static APP_Sensor_t *sensor = &attitude_sensor;
 
 /**
@@ -51,18 +51,16 @@ static APP_Sensor_t *sensor = &attitude_sensor;
 static bool task_sampler_request()
 {
     // 读取姿态（#50）传感器
-    if (modbus_rtu_host_read_cmd_03H(_MODBUS_HANDLER, _MODBUS_SLAVER_ADDR, _MODBUS_SLAVER_REGADDR, _MODBUS_READ_REG_NUM) == 0)
-    {
-        LOG(LOG_DEBUG, "Modbus 4 Send Failed! addr : %#x transStageState: %#x RxCount: %#x", _MODBUS_SLAVER_ADDR, _MODBUS_HANDLER->transStageState, _MODBUS_HANDLER->RxCount);
+    if (modbus_rtu_host_read_cmd_03H(_MODBUS_HANDLER, _MODBUS_SLAVER_ADDR, _MODBUS_SLAVER_REGADDR, _MODBUS_READ_REG_NUM) == 0) {
+        ULOG_DEBUG("Modbus 4 Send Failed! addr : %#x transStageState: %#x RxCount: %#x", _MODBUS_SLAVER_ADDR, _MODBUS_HANDLER->transStageState, _MODBUS_HANDLER->RxCount);
     }
-		return true;
+    return true;
 }
 
 static void sensor_response_handler()
 {
     // 如果匹配收到回复事件，并且功能码是0x03,并且从机地址是_MODBUS_SLAVER_ADDR
-    if (modbus_rtu_host_match_ack_event(_MODBUS_HANDLER, 0x03, _MODBUS_SLAVER_ADDR))
-    {
+    if (modbus_rtu_host_match_ack_event(_MODBUS_HANDLER, 0x03, _MODBUS_SLAVER_ADDR)) {
         RTU_Sampling_Var_t var;
         // 清空var
         memset((void *)&var, 0, sizeof(RTU_Sampling_Var_t));
@@ -80,9 +78,8 @@ static void sensor_response_handler()
         RTU_Sampling_Var_encoder(&var);
         // 将采样点推送到QFS
         uint32_t len = CHIP_W25Q512_QFS_push((uint8_t *)&var, sizeof(RTU_Sampling_Var_t));
-        if (len < sizeof(RTU_Sampling_Var_t))
-        {
-            LOG(LOG_ERROR, "QFS push data failed!\r\n");
+        if (len < sizeof(RTU_Sampling_Var_t)) {
+            ULOG_ERROR("QFS push data failed!\r\n");
         }
 
         {
@@ -93,8 +90,7 @@ static void sensor_response_handler()
 
             test_LoopFrequencyTest_handler(&loop_frq_test);
 
-            if (test_LoopFrequencyTest_readable(&loop_frq_test))
-            {
+            if (test_LoopFrequencyTest_readable(&loop_frq_test)) {
                 test_LoopFrequencyTest_show(&loop_frq_test, sensor->name);
                 test_LoopFrequencyTest_reset(&loop_frq_test);
             }

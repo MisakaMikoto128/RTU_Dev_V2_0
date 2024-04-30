@@ -30,25 +30,24 @@
 └──────────────┴─────────┘
  */
 #define SENSOR_CODE_WIND_SPEED_AND_DIRECTION 0x11
-#define SENSOR_CODE_SOLAR_RADIATION 0x12
-#define SENSOR_CODE_ANCHOR_CABLE_GAUGE 0x13
-#define SENSOR_CODE_VOLTAGE_CURRENT 0x14
-#define SENSOR_CODE_DISPLACEMENT 0x15
-#define SENSOR_CODE_ATTITUDE_SENSOR 0x16
+#define SENSOR_CODE_SOLAR_RADIATION          0x12
+#define SENSOR_CODE_ANCHOR_CABLE_GAUGE       0x13
+#define SENSOR_CODE_VOLTAGE_CURRENT          0x14
+#define SENSOR_CODE_DISPLACEMENT             0x15
+#define SENSOR_CODE_ATTITUDE_SENSOR          0x16
 #define SENSOR_CODE_INCLINATION_ANGLE_SENSOR 0x17
-#define SENSOR_CODE_PULL_PRESSURE 0x18
-#define SENSOR_CODE_TEMP_HUMI 0x19
+#define SENSOR_CODE_PULL_PRESSURE            0x18
+#define SENSOR_CODE_TEMP_HUMI                0x19
 
-//x -> 1-8 表示1-8号位移传感器
+// x -> 1-8 表示1-8号位移传感器
 #define SENSOR_CODE_DISPLACEMENTx(x) (0x20 + x)
 
-#define SENSOR_CODE_DEVICE_ID 0x01
+#define SENSOR_CODE_DEVICE_ID        0x01
 
-#define SENSOR_ERROR_VALUE 0
+#define SENSOR_ERROR_VALUE           0
 
 #pragma pack(1)
-typedef struct tagRTU_Sampling_Var_t
-{
+typedef struct tagRTU_Sampling_Var_t {
     uint8_t type;      // 传感器类型
     uint32_t datetime; // 日期时间UTC时间戳：精度秒，24小时制。
     uint16_t ms;       // 毫秒

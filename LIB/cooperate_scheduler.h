@@ -16,21 +16,19 @@
 #include <stdbool.h>
 #include <limits.h>
 #include "sc_list.h"
-#include "HDL_G4_CPU_Time.h"
+#include "HDL_CPU_Time.h"
 
 /* Config CPU Tick here */
-#define scheduler_get_cpu_tick() HDL_G4_CPU_Time_GetTick()
+#define scheduler_get_cpu_tick() HDL_CPU_Time_GetTick()
 
 typedef bool (*Function_t)(void *arg);
 
-typedef struct tagFunctional_t
-{
+typedef struct tagFunctional_t {
     Function_t fun;
     void *arg;
 } Functional_t;
 
-typedef struct tagFunctionalListNode_t
-{
+typedef struct tagFunctionalListNode_t {
     char *name;
     /*上一次执行的CPU时间戳：每次执行的时候或者第一次启动任务的时候更新。
     当当前CPU tick >= last_exe_tick+exe_times时执行，之后更新last_exe_tick。
@@ -50,8 +48,7 @@ typedef struct tagFunctionalListNode_t
     struct sc_list next;
 } TaskNode_t;
 
-typedef struct tagCooperativeGroup_t
-{
+typedef struct tagCooperativeGroup_t {
     // 每个group中每个方法的最小执行时间间隔,如果一个组占用的资源总是呗占用的，那么会
     // 以这个min_period轮询当前任务，直到资源被释放，这个任务才会执行成功(获取到资源)。
     // 单位：tick,范围 >= 1。任务组中任务最小资源占用时间指的是
@@ -65,8 +62,7 @@ typedef struct tagCooperativeGroup_t
 
 #define cooperate_scheduler_EXE_TIMES_INF UINT_MAX
 
-typedef struct tagCooperateScheduler_t
-{
+typedef struct tagCooperateScheduler_t {
     struct sc_list group_list; // for CooperativeGroup_t
 } CooperateScheduler_t;
 
@@ -119,11 +115,11 @@ void cooperate_group_init(CooperativeGroup_t *group);
  * 任务组中的任务都会占用同一个全局资源，每个任务占用的时间可能不一样，这里设置
  * 一个最小的占用时间，用于任务组内任务请求资源失败的延时。设置为最小是为了保证
  * 调度频率的准确性。
- * 
- * @param group 
+ *
+ * @param group
  * @param ms >1
  */
-void cooperate_group_set_min_resoure_occupation_time(CooperativeGroup_t* group,uint32_t ms);
+void cooperate_group_set_min_resoure_occupation_time(CooperativeGroup_t *group, uint32_t ms);
 
 /**
  * @brief 将任务节点注册到协同组中。

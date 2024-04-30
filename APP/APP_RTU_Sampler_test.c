@@ -13,9 +13,9 @@
 #include "CHIP_W25Q512_QueueFileSystem.h"
 #include "scheduler.h"
 #include "log.h"
-#include "test.h"
+
 #include <string.h>
-#include "mytime.h"
+#include "mtime.h"
 /**
  * @brief RTU传感器数据采样器测试。
  *
@@ -23,22 +23,19 @@
 void APP_RTU_Sampler_test()
 {
     LoopFrequencyTest_t loop_frq_test = {
-        .measure_time = 1000, //测试1秒钟
-        //其他成员默认初始化为0.
+        .measure_time = 1000, // 测试1秒钟
+        // 其他成员默认初始化为0.
     };
     APP_RTU_Sampler_init();
     RTU_Sampling_Var_t var;
     uint32_t total_write_amount_bak = 0;
-    while (1)
-    {
+    while (1) {
         APP_RTU_Sampler_handler();
-        if (test_LoopFrequencyTest_readable(&loop_frq_test))
-        {
+        if (test_LoopFrequencyTest_readable(&loop_frq_test)) {
             test_LoopFrequencyTest_show(&loop_frq_test, "Main");
             test_LoopFrequencyTest_reset(&loop_frq_test);
         }
-        if (period_query(0, 10))
-        {
+        if (period_query(0, 10)) {
             /*
             内部是存放到QFS队列中的，但是考虑到有时候4G模块发送有时候可能时快时慢,
             APP_RTU_Sampler要保证即使没有读取数据，存储数据到QFS任然能够始终成功：
@@ -51,12 +48,10 @@ void APP_RTU_Sampler_test()
             列的容量设置大一些就行。
             */
 
-            if (APP_RTU_Sampler_read(&var))
-            {
+            if (APP_RTU_Sampler_read(&var)) {
                 Debug_Printf("[APP_RTU_Sampler Test]:  start\r\ntype:%#x datetime%u ms:%d\r\n", var.type, var.datetime, var.ms);
                 Debug_Printf("[APP_RTU_Sampler Test]: ");
-                for (size_t i = 0; i < 8; i++)
-                {
+                for (size_t i = 0; i < 8; i++) {
                     Debug_Printf("%#x ", var.data[i]);
                 }
 
@@ -112,39 +107,36 @@ void APP_RTU_Sampler_encoder_test()
     APP_RTU_Sampler_init();
     RTU_Sampling_Var_t var = {0};
 
-    //清空var
+    // 清空var
     memset((void *)&var, 0, sizeof(RTU_Sampling_Var_t));
-    //放数据到采样点
+    // 放数据到采样点
     uint8_t *pdata = (uint8_t *)&var.data;
-    pdata[0] = 0xBC;
-    pdata[1] = 0x02;
-    pdata[2] = 0x0F;
-    pdata[3] = 0x0E;
-    //明确采样点类型
+    pdata[0]       = 0xBC;
+    pdata[1]       = 0x02;
+    pdata[2]       = 0x0F;
+    pdata[3]       = 0x0E;
+    // 明确采样点类型
     var.type = SENSOR_CODE_WIND_SPEED_AND_DIRECTION;
-    //编码采样点的时间和校验和
+    // 编码采样点的时间和校验和
     RTU_Sampling_Var_encoder(&var);
 
     Debug_Printf("[APP_RTU_Sampler Test]:  start\r\ntype:%#x datetime%u ms:%d\r\n", var.type, var.datetime, var.ms);
-    mytime_struct datetime = {0};
+    mtime_t datetime = {0};
 
     utc_sec_2_mytime(var.datetime, &datetime);
     Debug_Printf("%04d-%02d-%02d %02d:%02d:%02d %02d\r\n", datetime.nYear, datetime.nMonth, datetime.nDay, datetime.nHour, datetime.nMin, datetime.nSec, datetime.wSub);
     Debug_Printf("timestamp = %u\r\n", var.datetime);
     Debug_Printf("[APP_RTU_Sampler Test]: ");
-    for (size_t i = 0; i < 8; i++)
-    {
+    for (size_t i = 0; i < 8; i++) {
         Debug_Printf("%02X ", var.data[i]);
     }
 
     Debug_Printf("[APP_RTU_Sampler Test]:\r\n");
     pdata = (uint8_t *)&var;
-    for (size_t i = 0; i < sizeof(RTU_Sampling_Var_t); i++)
-    {
+    for (size_t i = 0; i < sizeof(RTU_Sampling_Var_t); i++) {
         Debug_Printf("%02X ", pdata[i]);
     }
     Debug_Printf("[APP_RTU_Sampler Test]: end\r\n");
-    while (1)
-    {
+    while (1) {
     }
 }

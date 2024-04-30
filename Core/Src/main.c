@@ -34,24 +34,24 @@
 /* USER CODE BEGIN Includes */
 #include "usb.h"
 
-#include "HDL_G4_Uart.h"
+#include "HDL_Uart.h"
 #include "CHIP_W25Q512_test.h"
-#include "HDL_G4_Uart_test.h"
-#include "HDL_G4_RTC_test.h"
-#include "HDL_G4_CPU_Time_test.h"
-#include "HDL_G4_Flash_test.h"
+#include "HDL_Uart_test.h"
+#include "HDL_RTC_test.h"
+#include "HDL_CPU_Time_test.h"
+#include "HDL_Flash_test.h"
 #include "log.h"
 #include "modbus_test.h"
 #include "CHIP_SHT30_test.h"
-#include "HDL_G4_ADC_test.h"
+#include "HDL_ADC_test.h"
 #include "scheduler_test.h"
 #include "APP_RTU_Sampler_test.h"
 #include "APP_Main.h"
 #include "BFL_RTU_Packet_test.h"
 
-#include "HDL_G4_Uart.h"
-#include "HDL_G4_RTC.h"
-#include "HDL_G4_CPU_Time.h"
+#include "HDL_Uart.h"
+#include "HDL_RTC.h"
+#include "HDL_CPU_Time.h"
 
 #include "log.h"
 #include <string.h>
@@ -154,15 +154,15 @@ int main(void)
 
 //   CHIP_W25Q512_QFS_test();
   // 串口测试
-  // HDL_G4_Uart_fifo_test_loop();
-  // HDL_G4_Uart_test_loop();
+  // HDL_Uart_fifo_test_loop();
+  // HDL_Uart_test_loop();
   // RTC测试
-  // HDL_G4_RTC_test();
-  // HDL_G4_RTC_leap_year_test();
-  // HDL_G4_RTC_subsecond_test();
+  // HDL_RTC_test();
+  // HDL_RTC_leap_year_test();
+  // HDL_RTC_subsecond_test();
   // CPU tick测试
-  // HDL_G4_CPU_Time_test();
-  // HDL_G4_CPU_Time_hard_timer_test();
+  // HDL_CPU_Time_test();
+  // HDL_CPU_Time_hard_timer_test();
   // Flash测试
   // Flash_inner_fun_test();
   // Flash_test();
@@ -179,7 +179,7 @@ int main(void)
   // CHIP_SHT30_async_test();
 
   // ADC测试
-  // HDL_G4_ADC_test();
+  // HDL_ADC_test();
 
   // Scheduler 测试
   // scheduler_test();
@@ -199,7 +199,7 @@ int main(void)
   //   for (LED_t led = LED1; led < LED_NUM; led++)
   //   {
   //     BFL_LED_toggle(led);
-  //     HAL_Delay(1000);
+  //     HDL_CPU_Time_DelayMs(1000);
   //   }
   // }
 

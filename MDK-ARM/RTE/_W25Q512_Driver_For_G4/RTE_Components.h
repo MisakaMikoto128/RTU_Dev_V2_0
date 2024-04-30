@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'W25Q512_Driver_For_G4' 
- * Target:  'W25Q512_Driver_For_G4' 
+ * Project: 'W25Q512_Driver_For' 
+ * Target:  'W25Q512_Driver_For' 
  */
 
 #ifndef RTE_COMPONENTS_H

@@ -9,7 +9,7 @@
  *
  */
 #include "APP_RTU_Sampler.h"
-#include "HDL_G4_RTC.h"
+#include "HDL_RTC.h"
 #include "log.h"
 #include <math.h>
 #include <string.h>
@@ -25,15 +25,14 @@
  */
 static uint8_t RTU_Sampling_Var_checksum(RTU_Sampling_Var_t *pvar)
 {
-	uint8_t checksum = 0;
-	uint32_t sum = 0;
-	uint8_t *pinput_data = (uint8_t *)pvar;
-	for (int i = 0; i < sizeof(RTU_Sampling_Var_t) - 1; i++)
-	{
-		sum += pinput_data[i];
-	}
-	checksum = sum & 0xFF;
-	return checksum;
+    uint8_t checksum     = 0;
+    uint32_t sum         = 0;
+    uint8_t *pinput_data = (uint8_t *)pvar;
+    for (int i = 0; i < sizeof(RTU_Sampling_Var_t) - 1; i++) {
+        sum += pinput_data[i];
+    }
+    checksum = sum & 0xFF;
+    return checksum;
 }
 
 /**
@@ -45,8 +44,8 @@ static uint8_t RTU_Sampling_Var_checksum(RTU_Sampling_Var_t *pvar)
  */
 uint8_t RTU_Sampling_Var_decoder(const uint8_t *data, RTU_Sampling_Var_t *pvar)
 {
-	*pvar = *((RTU_Sampling_Var_t *)data);
-	return RTU_Sampling_Var_checksum(pvar) == pvar->checksum;
+    *pvar = *((RTU_Sampling_Var_t *)data);
+    return RTU_Sampling_Var_checksum(pvar) == pvar->checksum;
 }
 
 /**
@@ -57,11 +56,11 @@ uint8_t RTU_Sampling_Var_decoder(const uint8_t *data, RTU_Sampling_Var_t *pvar)
  */
 void RTU_Sampling_Var_get_calibration_time_local(RTU_Sampling_Var_t *pvar, mtime_t *pdatetime)
 {
-	uint64_t datetime_ms = *((uint64_t *)(pvar->data));
-	uint32_t datetime_sec = datetime_ms / 1000;
-	uint32_t ms = datetime_ms - datetime_sec * 1000;
-	mtime_utc_sec_2_time(datetime_sec + 8UL * 60UL * 60UL, pdatetime);
-	pdatetime->wSub = HDL_G4_RTC_mSec2Subsec(ms);
+    uint64_t datetime_ms  = *((uint64_t *)(pvar->data));
+    uint32_t datetime_sec = datetime_ms / 1000;
+    uint32_t ms           = datetime_ms - datetime_sec * 1000;
+    mtime_utc_sec_2_time(datetime_sec + 8UL * 60UL * 60UL, pdatetime);
+    pdatetime->wSub = HDL_RTC_mSec2Subsec(ms);
 }
 
 /**
@@ -73,36 +72,36 @@ void RTU_Sampling_Var_get_calibration_time_local(RTU_Sampling_Var_t *pvar, mtime
  */
 void RTU_Sampling_Var_encoder(RTU_Sampling_Var_t *pvar, uint8_t type, void *data, uint16_t len)
 {
-	len = len > sizeof(pvar->data) ? sizeof(pvar->data) : len;
-	// 清空var
-	memset(pvar, 0, sizeof(RTU_Sampling_Var_t));
-	// 放数据到采样点对象
-	memcpy(pvar->data, data, len);
-	// 明确采样点类型
-	pvar->type = type;
-	// 编码采样点的时间和校验和
-	pvar->datetime = HDL_G4_RTC_GetTimeTick(&pvar->ms);
-	pvar->ms = HDL_G4_RTC_Subsec2mSec(pvar->ms);
+    len = len > sizeof(pvar->data) ? sizeof(pvar->data) : len;
+    // 清空var
+    memset(pvar, 0, sizeof(RTU_Sampling_Var_t));
+    // 放数据到采样点对象
+    memcpy(pvar->data, data, len);
+    // 明确采样点类型
+    pvar->type = type;
+    // 编码采样点的时间和校验和
+    pvar->datetime = HDL_RTC_GetTimeTick(&pvar->ms);
+    pvar->ms       = HDL_RTC_Subsec2mSec(pvar->ms);
 
-	pvar->checksum = RTU_Sampling_Var_checksum(pvar);
+    pvar->checksum = RTU_Sampling_Var_checksum(pvar);
 }
 
 /**
  * @brief 同RTU_Sampling_Var_encoder，但是自动获取编码时间。
- * 
- * @param pvar 
- * @param type 
- * @param data 
- * @param len 
+ *
+ * @param pvar
+ * @param type
+ * @param data
+ * @param len
  */
 void RTU_Sampling_Var_encoder_no_timestamp(RTU_Sampling_Var_t *pvar, uint8_t type, void *data, uint16_t len)
 {
-	len = len > sizeof(pvar->data) ? sizeof(pvar->data) : len;
-	// 清空var
-	memset(pvar, 0, sizeof(RTU_Sampling_Var_t));
-	// 放数据到采样点对象
-	memcpy(pvar->data, data, len);
-	// 明确采样点类型
-	pvar->type = type;
-	pvar->checksum = RTU_Sampling_Var_checksum(pvar);
+    len = len > sizeof(pvar->data) ? sizeof(pvar->data) : len;
+    // 清空var
+    memset(pvar, 0, sizeof(RTU_Sampling_Var_t));
+    // 放数据到采样点对象
+    memcpy(pvar->data, data, len);
+    // 明确采样点类型
+    pvar->type     = type;
+    pvar->checksum = RTU_Sampling_Var_checksum(pvar);
 }

@@ -9,11 +9,11 @@
 void c_arr_queue_create(CircularArrayQueue Q, ElementType *pBuf, uint32_t bufSize)
 {
     Q->Capacity = bufSize;
-    Q->pData = pBuf;
+    Q->pData    = pBuf;
 
     // Make empty
     Q->Front = 0;
-    Q->Rear = 0;
+    Q->Rear  = 0;
 }
 
 /**
@@ -59,11 +59,10 @@ uint32_t c_arr_queue_size(CircularArrayQueue Q)
 uint8_t c_arr_queue_enqueue(CircularArrayQueue Q, const ElementType *pX)
 {
     uint8_t ret = 0;
-    if (!c_arr_queue_is_full(Q))
-    {
+    if (!c_arr_queue_is_full(Q)) {
         Q->pData[Q->Rear] = *pX;
-        Q->Rear = (Q->Rear + 1) % Q->Capacity;
-        ret = 1;
+        Q->Rear           = (Q->Rear + 1) % Q->Capacity;
+        ret               = 1;
     }
     return ret;
 }
@@ -78,13 +77,12 @@ uint8_t c_arr_queue_enqueue(CircularArrayQueue Q, const ElementType *pX)
 uint8_t c_arr_queue_dequeue(CircularArrayQueue Q, ElementType *pX)
 {
     uint8_t ret = 0;
-    if (!c_arr_queue_is_empty(Q))
-    {
+    if (!c_arr_queue_is_empty(Q)) {
         // font
         *pX = Q->pData[Q->Front];
         // dequeue
         Q->Front = (Q->Front + 1) % Q->Capacity;
-        ret = 1;
+        ret      = 1;
     }
 
     return ret;
@@ -102,10 +100,9 @@ uint32_t c_arr_queue_in(CircularArrayQueue Q, const ElementType *pBuf, uint32_t 
 {
     uint32_t ret = 0;
 
-    while (!c_arr_queue_is_full(Q) && bufSize > 0)
-    {
+    while (!c_arr_queue_is_full(Q) && bufSize > 0) {
         Q->pData[Q->Rear] = pBuf[ret];
-        Q->Rear = (Q->Rear + 1) % Q->Capacity;
+        Q->Rear           = (Q->Rear + 1) % Q->Capacity;
         bufSize--;
         ret++;
     }
@@ -125,8 +122,7 @@ uint32_t c_arr_queue_out(CircularArrayQueue Q, ElementType *pBuf, uint32_t bufSi
 {
     uint32_t ret = 0;
 
-    while (!c_arr_queue_is_empty(Q) && bufSize > 0)
-    {
+    while (!c_arr_queue_is_empty(Q) && bufSize > 0) {
         // font
         pBuf[ret] = Q->pData[Q->Front];
         // dequeue

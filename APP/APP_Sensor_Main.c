@@ -9,10 +9,10 @@
  *
  */
 
-#include "HDL_G4_ADC.h"
-#include "HDL_G4_IWDG.h"
-#include "HDL_G4_Uart.h"
-#include "HDL_G4_RTC.h"
+#include "HDL_ADC.h"
+#include "HDL_IWDG.h"
+#include "HDL_Uart.h"
+#include "HDL_RTC.h"
 #include "CHIP_SHT30.h"
 #include "BFL_RTU_Packet.h"
 #include "BFL_LED.h"
@@ -22,9 +22,9 @@
 #include "CHIP_W25Q512_QueueFileSystem.h"
 #include "log.h"
 #include "modbus_host.h"
-#include "test.h"
+
 #include "scheduler.h"
-#include "mytime.h"
+#include "mtime.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -41,17 +41,17 @@ void APP_Sensor_Main()
 {
     RTU_Sampling_Var_t var;
     RTU_Sampling_Var_t var_header;
-    RTU_Packet_t pkg = {0};
+    RTU_Packet_t pkg          = {0};
     int pushed_sample_var_num = 0;
     CommunPara commPara;
     uint32_t dwLen;
     uint32_t led_period_recorder;
-    HDL_G4_CPU_Time_Init();
-    HDL_G4_RTC_Init();
-    HDL_G4_ADC_Init();
-    HDL_G4_ADC_Enable();
-    HDL_G4_WATCHDOG_Init(20);
-    EM_LOG_Init();
+    HDL_CPU_Time_Init();
+    HDL_RTC_Init();
+    HDL_ADC_Init();
+    HDL_ADC_Enable();
+    HDL_WATCHDOG_Init(20);
+    ulog_init_user();
 
     SetCommTestPara(&commPara); // 设置通信测试参数
     BFL_4G_Init(&commPara);     // 模块初始化
@@ -77,52 +77,41 @@ void APP_Sensor_Main()
 
     APP_Sampler_get_first_sample_var(&var_header);
 
-    while (1)
-    {
+    while (1) {
         APP_Sensor_Main_handler();
 
         dwLen = BFL_4G_Read(1, aBuf, 1000);
-        if (dwLen > 0)
-        {
+        if (dwLen > 0) {
             // Uart_Write(COM1, aBuf, dwLen);
         }
 
         // 500 cputick执行一次
-        if (period_query_user(&led_period_recorder, 500))
-        {
+        if (period_query_user(&led_period_recorder, 500)) {
             BFL_LED_toggle(LED1);
         }
 
-        HDL_G4_WATCHDOG_Feed();
+        HDL_WATCHDOG_Feed();
 
-        if (BFL_4G_Module_writeable())
-        {
-            if (APP_Sampler_read(&var))
-            {
+        if (BFL_4G_Module_writeable()) {
+            if (APP_Sampler_read(&var)) {
                 // 存放指定个数的数据到RTU数据包中(存放数据到RTU数据包的数据域)
-                switch (pushed_sample_var_num)
-                {
-                case 0:
-                {
-                    BFL_RTU_Packet_push_Sampling_Var(&pkg, &var_header);
-                    BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-                    pushed_sample_var_num += 2;
-                }
-                break;
-                case 50 - 1: // 存放了50给采样值了,最大60-1
-                {
-                    BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-                    BFL_RTU_Packet_send(&pkg);
-                    pushed_sample_var_num = 0;
-                }
-                break;
-                default:
-                {
-                    // 这里最好自己预先确定有多少数据需要存放到数据域
-                    BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-                    pushed_sample_var_num++;
-                }
-                break;
+                switch (pushed_sample_var_num) {
+                    case 0: {
+                        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var_header);
+                        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+                        pushed_sample_var_num += 2;
+                    } break;
+                    case 50 - 1: // 存放了50给采样值了,最大60-1
+                    {
+                        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+                        BFL_RTU_Packet_send(&pkg);
+                        pushed_sample_var_num = 0;
+                    } break;
+                    default: {
+                        // 这里最好自己预先确定有多少数据需要存放到数据域
+                        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+                        pushed_sample_var_num++;
+                    } break;
                 }
             }
         }

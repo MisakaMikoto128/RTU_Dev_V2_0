@@ -11,7 +11,6 @@
 #include "BFL_RTU_Packet.h"
 #include "crc.h"
 
-
 /**
  * @brief 初始化RTU数据包，确定存放数据的缓存。
  *
@@ -23,9 +22,8 @@
 uint8_t BFL_RTU_Packet_init(RTU_Packet_t *ppacket, byte *data, int capacity)
 {
     uint8_t res = 0;
-    if (capacity >= (RTU_PACKET_HEADER_LEN + 2 + 1))
-    {
-        ppacket->header.id = RTU_PACKET_ID;
+    if (capacity >= (RTU_PACKET_HEADER_LEN + 2 + 1)) {
+        ppacket->header.id      = RTU_PACKET_ID;
         ppacket->header.rem_len = 0;
         sc_byte_buffer_init(&ppacket->buf, data, capacity - RTU_PACKET_HEADER_LEN);
         sc_byte_buffer_init(&ppacket->data_buf, data + RTU_PACKET_HEADER_LEN, capacity);
@@ -57,13 +55,13 @@ uint8_t BFL_RTU_Packet_encoder(RTU_Packet_t *ppacket)
     sc_byte_buffer_push_data(&ppacket->buf, (uint8_t *)&rem_len, sizeof(uint16_t));
     // 连接数据域到字节化缓冲，因为是同一块内存，所以直接设置字节化缓冲的大小即可
     sc_byte_buffer_set_size(&ppacket->buf, sc_byte_buffer_size(&ppacket->data_buf) + sc_byte_buffer_size(&ppacket->buf));
-    uint16_t crc = CRC16_Modbus((uint8_t*)sc_byte_buffer_data_ptr(&ppacket->buf), sc_byte_buffer_size(&ppacket->buf));
-    
-    //crc端序
+    uint16_t crc = CRC16_Modbus((uint8_t *)sc_byte_buffer_data_ptr(&ppacket->buf), sc_byte_buffer_size(&ppacket->buf));
+
+    // crc端序
     uint8_t crc_buf[RTU_PACKET_CRC_LEN] = {0};
-    crc_buf[0] = (crc & (0xFF << 8)) >> 8;
-    crc_buf[1] = (crc & (0xFF << 0)) >> 0;
-    
+    crc_buf[0]                          = (crc & (0xFF << 8)) >> 8;
+    crc_buf[1]                          = (crc & (0xFF << 0)) >> 0;
+
     sc_byte_buffer_push_data(&ppacket->buf, (uint8_t *)&crc_buf, RTU_PACKET_CRC_LEN);
     sc_byte_buffer_set_size(&ppacket->data_buf, sc_byte_buffer_size(&ppacket->data_buf) + RTU_PACKET_CRC_LEN);
     return res;
@@ -82,15 +80,13 @@ uint8_t BFL_RTU_Packet_decoder(RTU_Packet_t *ppacket, byte *data, int len)
 {
     uint8_t ret = 1;
 
-    if (len >= RTU_PACKET_MIN_LEN)
-    {
+    if (len >= RTU_PACKET_MIN_LEN) {
         sc_byte_buffer_init(&ppacket->buf, data, len);
         sc_byte_buffer_set_size(&ppacket->buf, len);
         // 计算CRC，这里数据的长度已经包含了CRC，这个带入能够计算得到0
-        uint16_t crc = CRC16_Modbus((uint8_t*)sc_byte_buffer_data_ptr(&ppacket->buf), sc_byte_buffer_size(&ppacket->buf));
-        if (crc == 0)
-        {
-            ppacket->header.id = *((uint16_t *)(data));
+        uint16_t crc = CRC16_Modbus((uint8_t *)sc_byte_buffer_data_ptr(&ppacket->buf), sc_byte_buffer_size(&ppacket->buf));
+        if (crc == 0) {
+            ppacket->header.id      = *((uint16_t *)(data));
             ppacket->header.rem_len = *((uint16_t *)(data + 2));
             sc_byte_buffer_init(&ppacket->data_buf, data + RTU_PACKET_HEADER_LEN, len - RTU_PACKET_HEADER_LEN);
             ret = 0;
@@ -122,8 +118,7 @@ uint8_t BFL_RTU_Packet_decoder(RTU_Packet_t *ppacket, byte *data, int len);
  */
 uint32_t BFL_RTU_Packet_push_data(RTU_Packet_t *ppacket, const byte *data, int len)
 {
-    if (len + 2 + sc_byte_buffer_size(&ppacket->data_buf) > sc_byte_buffer_capacity(&ppacket->data_buf))
-    {
+    if (len + 2 + sc_byte_buffer_size(&ppacket->data_buf) > sc_byte_buffer_capacity(&ppacket->data_buf)) {
         len = sc_byte_buffer_capacity(&ppacket->data_buf) - 2 - sc_byte_buffer_size(&ppacket->data_buf);
     }
     return sc_byte_buffer_push_data(&ppacket->data_buf, data, len);
@@ -139,7 +134,7 @@ uint32_t BFL_RTU_Packet_push_data(RTU_Packet_t *ppacket, const byte *data, int l
 uint32_t BFL_RTU_Packet_push_Sampling_Var(RTU_Packet_t *ppacket, RTU_Sampling_Var_t *pvar)
 {
     uint32_t ret = 0;
-    ret = BFL_RTU_Packet_push_data(ppacket, (uint8_t *)pvar, sizeof(RTU_Sampling_Var_t));
+    ret          = BFL_RTU_Packet_push_data(ppacket, (uint8_t *)pvar, sizeof(RTU_Sampling_Var_t));
     return ret == sizeof(RTU_Sampling_Var_t);
 }
 
@@ -152,19 +147,17 @@ uint32_t BFL_RTU_Packet_push_Sampling_Var(RTU_Packet_t *ppacket, RTU_Sampling_Va
  */
 uint32_t BFL_RTU_Packet_get_Sampling_Var_at(RTU_Packet_t *ppacket, RTU_Sampling_Var_t *pvar, uint32_t index)
 {
-    uint32_t ret = 1; // 默认越界错误
+    uint32_t ret                         = 1; // 默认越界错误
     uint32_t rtu_sampling_var_t_arr_size = 0;
-    rtu_sampling_var_t_arr_size = BFL_RTU_Packet_get_Sampling_Var_num(ppacket);
-    if (index < rtu_sampling_var_t_arr_size)
-    {
+    rtu_sampling_var_t_arr_size          = BFL_RTU_Packet_get_Sampling_Var_num(ppacket);
+    if (index < rtu_sampling_var_t_arr_size) {
         ret = 0; // 解除越界错误
 
-        uint8_t decode_res = 0;
+        uint8_t decode_res      = 0;
         const uint8_t *data_ptr = sc_byte_buffer_data_ptr(&ppacket->data_buf);
-        decode_res = RTU_Sampling_Var_decoder(data_ptr+index*RTU_SAMPLING_VAR_T_SIZE, pvar);
-        
-        if (decode_res > 0)
-        {
+        decode_res              = RTU_Sampling_Var_decoder(data_ptr + index * RTU_SAMPLING_VAR_T_SIZE, pvar);
+
+        if (decode_res > 0) {
             ret = 2;
         }
     }
@@ -181,7 +174,7 @@ uint32_t BFL_RTU_Packet_get_Sampling_Var_at(RTU_Packet_t *ppacket, RTU_Sampling_
 uint32_t BFL_RTU_Packet_get_Sampling_Var_num(RTU_Packet_t *ppacket)
 {
     uint32_t ret = 0;
-    ret = (ppacket->header.rem_len - RTU_PACKET_CRC_LEN) / RTU_SAMPLING_VAR_T_SIZE;
+    ret          = (ppacket->header.rem_len - RTU_PACKET_CRC_LEN) / RTU_SAMPLING_VAR_T_SIZE;
     return ret;
 }
 
@@ -204,7 +197,7 @@ sc_byte_buffer *BFL_RTU_Packet_get_buffer(RTU_Packet_t *ppacket)
 void BFL_RTU_Packet_send_by_4G(RTU_Packet_t *ppacket, int sockid)
 {
     sc_byte_buffer *buf = NULL;
-    buf = BFL_RTU_Packet_get_buffer(ppacket);
+    buf                 = BFL_RTU_Packet_get_buffer(ppacket);
 
-    //BFL_4G_Write(2, (uint8_t *)sc_byte_buffer_data_ptr(buf), sc_byte_buffer_size(buf));
+    // BFL_4G_Write(2, (uint8_t *)sc_byte_buffer_data_ptr(buf), sc_byte_buffer_size(buf));
 }

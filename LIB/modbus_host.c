@@ -13,18 +13,17 @@ PE10
 COM5
 PE8
 */
-#define RS485_3_DIR_PIN GPIO_PIN_12
-#define RS485_4_DIR_PIN GPIO_PIN_10
-#define RS485_5_DIR_PIN GPIO_PIN_8
-#define RS485_3_DIR_Port GPIOE
-#define RS485_4_DIR_Port GPIOE
-#define RS485_5_DIR_Port GPIOE
+#define RS485_3_DIR_PIN           GPIO_PIN_12
+#define RS485_4_DIR_PIN           GPIO_PIN_10
+#define RS485_5_DIR_PIN           GPIO_PIN_8
+#define RS485_3_DIR_Port          GPIOE
+#define RS485_4_DIR_Port          GPIOE
+#define RS485_5_DIR_Port          GPIOE
 #define RS485_3_DIR_Port_CLK_EN() LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE)
 #define RS485_4_DIR_Port_CLK_EN() LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE)
 #define RS485_5_DIR_Port_CLK_EN() LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOE)
 
 void RS485_SendBuf(ModbusRTUInstance_t *hmodbusRTU, uint8_t *_ucaBuf, uint16_t _usLen);
-uint16_t CRC16_Modbus(uint8_t *_pBuf, uint16_t _usLen);
 void modbus_rtu_poll(void);
 static void modbus_rtu_host_uart_msg_fatch();
 void modbus_rtu_trans_event_inner_handler();
@@ -93,11 +92,11 @@ void gpio_initModbus3()
     RS485_3_DIR_Port_CLK_EN();
     releaseModbus3();
     /**/
-    GPIO_InitStruct.Pin = RS485_3_DIR_PIN;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = RS485_3_DIR_PIN;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(RS485_3_DIR_Port, &GPIO_InitStruct);
     // 初始化时释放RS485总线
     releaseModbus3();
@@ -109,11 +108,11 @@ void gpio_initModbus4()
     RS485_4_DIR_Port_CLK_EN();
     releaseModbus4();
     /**/
-    GPIO_InitStruct.Pin = RS485_4_DIR_PIN;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = RS485_4_DIR_PIN;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(RS485_4_DIR_Port, &GPIO_InitStruct);
     // 初始化时释放RS485总线
     releaseModbus4();
@@ -125,11 +124,11 @@ void gpio_initModbus5()
     RS485_5_DIR_Port_CLK_EN();
     releaseModbus5();
     /**/
-    GPIO_InitStruct.Pin = RS485_5_DIR_PIN;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin        = RS485_5_DIR_PIN;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
     LL_GPIO_Init(RS485_5_DIR_Port, &GPIO_InitStruct);
     // 初始化时释放RS485总线
     releaseModbus5();
@@ -146,12 +145,10 @@ void gpio_initModbus5()
 void MODH3_ReciveNewFromISR(uint8_t _data)
 {
     ModbusRTUInstance_t *hmodbusRTU = hModbusRTU3;
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING)
-    {
-        HDL_G4_CPU_Time_StartHardTimer(1, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING) {
+        HDL_CPU_Time_StartHardTimer(1, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
 
-        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE)
-        {
+        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE) {
             hmodbusRTU->RxBuf[hmodbusRTU->_RxCount++] = _data;
         }
     }
@@ -160,12 +157,10 @@ void MODH3_ReciveNewFromISR(uint8_t _data)
 void MODH4_ReciveNewFromISR(uint8_t _data)
 {
     ModbusRTUInstance_t *hmodbusRTU = hModbusRTU4;
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING)
-    {
-        HDL_G4_CPU_Time_StartHardTimer(2, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING) {
+        HDL_CPU_Time_StartHardTimer(2, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
 
-        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE)
-        {
+        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE) {
             hmodbusRTU->RxBuf[hmodbusRTU->_RxCount++] = _data;
         }
     }
@@ -176,11 +171,9 @@ void MODH5_ReciveNewFromISR(uint8_t _data)
     ModbusRTUInstance_t *hmodbusRTU = hModbusRTU5;
     // TODO: 有些架构下即使数据还没有处理，也要请求返回数据。但是这里我认为返回的数据至少是需要存储的，即使什么也不做
     // 也可以当作一件事情，所以只有传输中可以接收下位机的数据
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING)
-    {
-        HDL_G4_CPU_Time_StartHardTimer(3, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
-        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE)
-        {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING) {
+        HDL_CPU_Time_StartHardTimer(3, hmodbusRTU->usTimeOut35, (void *)(hmodbusRTU->t35_timeout_callback));
+        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE) {
             hmodbusRTU->RxBuf[hmodbusRTU->_RxCount++] = _data;
         }
     }
@@ -190,33 +183,33 @@ void MODH5_ReciveNewFromISR(uint8_t _data)
 ModbusRTUInstance_t modbusRTUList[MODBUS_RTUS_HOST_NUM] =
     {
         {
-            .com = COM3,
-            .enabled = 0,
-            .get_bus = getModbus3,
-            .release_bus = releaseModbus3,
-            .gpio_init = gpio_initModbus3,
+            .com                   = COM3,
+            .enabled               = 0,
+            .get_bus               = getModbus3,
+            .release_bus           = releaseModbus3,
+            .gpio_init             = gpio_initModbus3,
             .receive_char_callback = MODH3_ReciveNewFromISR,
-            .t35_timeout_callback = MODH3_RxTimeOut,
+            .t35_timeout_callback  = MODH3_RxTimeOut,
 
         },
         {
-            .com = COM4,
-            .enabled = 0,
-            .get_bus = getModbus4,
-            .release_bus = releaseModbus4,
-            .gpio_init = gpio_initModbus4,
+            .com                   = COM4,
+            .enabled               = 0,
+            .get_bus               = getModbus4,
+            .release_bus           = releaseModbus4,
+            .gpio_init             = gpio_initModbus4,
             .receive_char_callback = MODH4_ReciveNewFromISR,
-            .t35_timeout_callback = MODH4_RxTimeOut,
+            .t35_timeout_callback  = MODH4_RxTimeOut,
 
         },
         {
-            .com = COM5,
-            .enabled = 0,
-            .get_bus = getModbus5,
-            .release_bus = releaseModbus5,
-            .gpio_init = gpio_initModbus5,
+            .com                   = COM5,
+            .enabled               = 0,
+            .get_bus               = getModbus5,
+            .release_bus           = releaseModbus5,
+            .gpio_init             = gpio_initModbus5,
             .receive_char_callback = MODH5_ReciveNewFromISR,
-            .t35_timeout_callback = MODH5_RxTimeOut,
+            .t35_timeout_callback  = MODH5_RxTimeOut,
         },
 };
 
@@ -303,7 +296,7 @@ static void MODH_SendAckWithCRC(ModbusRTUInstance_t *hmodbusRTU)
 {
     uint16_t crc;
 
-    crc = CRC16_Modbus(hmodbusRTU->TxBuf, hmodbusRTU->_TxCount);
+    crc                                       = CRC16_Modbus(hmodbusRTU->TxBuf, hmodbusRTU->_TxCount);
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = crc >> 8;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = crc;
     MODH_SendPacket(hmodbusRTU, hmodbusRTU->TxBuf, hmodbusRTU->_TxCount);
@@ -322,36 +315,36 @@ static void MODH_AnalyzeApp(ModbusRTUInstance_t *hmodbusRTU)
     hmodbusRTU->respons_func_code = hmodbusRTU->RxBuf[1];
     switch (hmodbusRTU->RxBuf[1]) /* 第2个字节 功能码 */
     {
-    case 0x01: /* 读取线圈状态 */
-        MODH_Read_01H(hmodbusRTU);
-        break;
+        case 0x01: /* 读取线圈状态 */
+            MODH_Read_01H(hmodbusRTU);
+            break;
 
-    case 0x02: /* 读取输入状态 */
-        MODH_Read_02H(hmodbusRTU);
-        break;
+        case 0x02: /* 读取输入状态 */
+            MODH_Read_02H(hmodbusRTU);
+            break;
 
-    case 0x03: /* 读取保持寄存器 在一个或多个保持寄存器中取得当前的二进制值 */
-        MODH_Read_03H(hmodbusRTU);
-        break;
+        case 0x03: /* 读取保持寄存器 在一个或多个保持寄存器中取得当前的二进制值 */
+            MODH_Read_03H(hmodbusRTU);
+            break;
 
-    case 0x04: /* 读取输入寄存器 */
-        MODH_Read_04H(hmodbusRTU);
-        break;
+        case 0x04: /* 读取输入寄存器 */
+            MODH_Read_04H(hmodbusRTU);
+            break;
 
-    case 0x05: /* 强制单线圈 */
-        MODH_Read_05H(hmodbusRTU);
-        break;
+        case 0x05: /* 强制单线圈 */
+            MODH_Read_05H(hmodbusRTU);
+            break;
 
-    case 0x06: /* 写单个寄存器 */
-        MODH_Read_06H(hmodbusRTU);
-        break;
+        case 0x06: /* 写单个寄存器 */
+            MODH_Read_06H(hmodbusRTU);
+            break;
 
-    case 0x10: /* 写多个寄存器 */
-        MODH_Read_10H(hmodbusRTU);
-        break;
+        case 0x10: /* 写多个寄存器 */
+            MODH_Read_10H(hmodbusRTU);
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 
@@ -369,7 +362,7 @@ void MODH_Send01H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 {
     hmodbusRTU->func_code = 0x01;
 
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;     /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x01;      /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8; /* 寄存器编号 高字节 */
@@ -380,10 +373,10 @@ void MODH_Send01H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
     MODH_SendAckWithCRC(hmodbusRTU); /* 发送数据，自动加CRC */
 
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->RegNum = _num;                          /* 寄存器个数 */
-    hmodbusRTU->RegAddr = _reg;                         /* 保存01H指令中的寄存器地址，方便对应答数据进行分类 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->RegNum     = _num;                      /* 寄存器个数 */
+    hmodbusRTU->RegAddr    = _reg;                      /* 保存01H指令中的寄存器地址，方便对应答数据进行分类 */
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -398,8 +391,8 @@ void MODH_Send01H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 */
 void MODH_Send02H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint16_t _num)
 {
-    hmodbusRTU->func_code = 0x02;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x02;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;     /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x02;      /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8; /* 寄存器编号 高字节 */
@@ -409,10 +402,10 @@ void MODH_Send02H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 
     MODH_SendAckWithCRC(hmodbusRTU);                    /* 发送数据，自动加CRC */
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->RegNum = _num;                          /* 寄存器个数 */
-    hmodbusRTU->RegAddr = _reg;                         /* 保存02H指令中的寄存器地址，方便对应答数据进行分类 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->RegNum     = _num;                      /* 寄存器个数 */
+    hmodbusRTU->RegAddr    = _reg;                      /* 保存02H指令中的寄存器地址，方便对应答数据进行分类 */
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -427,8 +420,8 @@ void MODH_Send02H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 */
 void MODH_Send03H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint16_t _num)
 {
-    hmodbusRTU->func_code = 0x03;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x03;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;     /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x03;      /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8; /* 寄存器编号 高字节 */
@@ -438,10 +431,10 @@ void MODH_Send03H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 
     MODH_SendAckWithCRC(hmodbusRTU);                    /* 发送数据，自动加CRC */
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->RegNum = _num;                          /* 寄存器个数 */
-    hmodbusRTU->RegAddr = _reg;                         /* 保存03H指令中的寄存器地址，方便对应答数据进行分类 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->RegNum     = _num;                      /* 寄存器个数 */
+    hmodbusRTU->RegAddr    = _reg;                      /* 保存03H指令中的寄存器地址，方便对应答数据进行分类 */
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -456,8 +449,8 @@ void MODH_Send03H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 */
 void MODH_Send04H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint16_t _num)
 {
-    hmodbusRTU->func_code = 0x04;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x04;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;     /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x04;      /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8; /* 寄存器编号 高字节 */
@@ -467,10 +460,10 @@ void MODH_Send04H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 
     MODH_SendAckWithCRC(hmodbusRTU);                    /* 发送数据，自动加CRC */
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->RegNum = _num;                          /* 寄存器个数 */
-    hmodbusRTU->RegAddr = _reg;                         /* 保存04H指令中的寄存器地址，方便对应答数据进行分类 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->RegNum     = _num;                      /* 寄存器个数 */
+    hmodbusRTU->RegAddr    = _reg;                      /* 保存04H指令中的寄存器地址，方便对应答数据进行分类 */
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -485,8 +478,8 @@ void MODH_Send04H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 */
 void MODH_Send05H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint16_t _value)
 {
-    hmodbusRTU->func_code = 0x05;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x05;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;       /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x05;        /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8;   /* 寄存器编号 高字节 */
@@ -497,8 +490,8 @@ void MODH_Send05H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
     MODH_SendAckWithCRC(hmodbusRTU); /* 发送数据，自动加CRC */
 
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -513,8 +506,8 @@ void MODH_Send05H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 */
 void MODH_Send06H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint16_t _value)
 {
-    hmodbusRTU->func_code = 0x06;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x06;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;       /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x06;        /* 功能码 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8;   /* 寄存器编号 高字节 */
@@ -525,8 +518,8 @@ void MODH_Send06H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
     MODH_SendAckWithCRC(hmodbusRTU); /* 发送数据，自动加CRC */
 
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -543,8 +536,8 @@ void MODH_Send06H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 void MODH_Send10H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg, uint8_t _num, uint8_t *_buf)
 {
     uint16_t i;
-    hmodbusRTU->func_code = 0x10;
-    hmodbusRTU->_TxCount = 0;
+    hmodbusRTU->func_code                     = 0x10;
+    hmodbusRTU->_TxCount                      = 0;
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _addr;     /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 0x10;      /* 从站地址 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _reg >> 8; /* 寄存器编号 高字节 */
@@ -553,10 +546,8 @@ void MODH_Send10H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _num;      /* 寄存器个数 低字节 */
     hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = 2 * _num;  /* 数据字节数 */
 
-    for (i = 0; i < 2 * _num; i++)
-    {
-        if (hmodbusRTU->_TxCount > H_RX_BUF_SIZE - 3)
-        {
+    for (i = 0; i < 2 * _num; i++) {
+        if (hmodbusRTU->_TxCount > H_RX_BUF_SIZE - 3) {
             return; /* 数据超过缓冲区超度，直接丢弃不发送 */
         }
         hmodbusRTU->TxBuf[hmodbusRTU->_TxCount++] = _buf[i]; /* 后面的数据长度 */
@@ -564,8 +555,8 @@ void MODH_Send10H(ModbusRTUInstance_t *hmodbusRTU, uint8_t _addr, uint16_t _reg,
 
     MODH_SendAckWithCRC(hmodbusRTU);                    /* 发送数据，自动加CRC */
     hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE; /* 清接传输结果标志 */
-    hmodbusRTU->_RxCount = 0;                           /*清空接收缓存*/
-    hmodbusRTU->slaveAddr = _addr;                      /*记录本次传输的从机地址*/
+    hmodbusRTU->_RxCount   = 0;                         /*清空接收缓存*/
+    hmodbusRTU->slaveAddr  = _addr;                     /*记录本次传输的从机地址*/
 }
 
 /*
@@ -585,12 +576,10 @@ void MODH_ReciveNew(ModbusRTUInstance_t *hmodbusRTU, uint8_t _data)
     */
 
     /*记录上一次收到一个字节的微秒时间戳*/
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING)
-    {
-        hmodbusRTU->lastRevByteUsTick = HDL_G4_CPU_Time_GetUsTick();
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_TRANSMITING) {
+        hmodbusRTU->lastRevByteUsTick = HDL_CPU_Time_GetUsTick();
 
-        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE)
-        {
+        if (hmodbusRTU->_RxCount < H_RX_BUF_SIZE) {
             hmodbusRTU->RxBuf[hmodbusRTU->_RxCount++] = _data;
         }
     }
@@ -619,12 +608,10 @@ static inline void MODH_RxTimeOut(ModbusRTUInstance_t *hmodbusRTU)
 */
 void modbus_rtu_poll(void)
 {
-    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++)
-    {
+    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++) {
         ModbusRTUInstance_t *hmodbusRTU = &modbusRTUList[i];
         // Modbus RTU host未使能,掠过执行
-        if (!hmodbusRTU->enabled)
-        {
+        if (!hmodbusRTU->enabled) {
             continue;
         }
 
@@ -648,8 +635,7 @@ void modbus_rtu_poll(void)
             hmodbusRTU->gTimeOutT35Flag = 0;
 
             /* 接收到的数据小于4个字节就认为错误，地址（8bit）+指令（8bit）+操作寄存器（16bit） */
-            if (hmodbusRTU->_RxCount < 4)
-            {
+            if (hmodbusRTU->_RxCount < 4) {
                 hmodbusRTU->_RxCount = 0; /* 必须清零计数器，方便下次帧同步 */
 
                 hmodbusRTU->transEvent = MODBUS_RTU_TRANS_ERR_REV_FRME; /* 帧错误 */
@@ -659,17 +645,15 @@ void modbus_rtu_poll(void)
 
             /* 计算CRC校验和，这里是将接收到的数据包含CRC16值一起做CRC16，结果是0，表示正确接收 */
             crc1 = CRC16_Modbus(hmodbusRTU->RxBuf, hmodbusRTU->_RxCount);
-            if (crc1 != 0)
-            {
+            if (crc1 != 0) {
 
                 char buf[24 * 3];
                 int show_len = hmodbusRTU->_RxCount > sizeof(buf) ? sizeof(buf) : hmodbusRTU->_RxCount;
-                for (size_t i = 0; i < show_len; i++)
-                {
+                for (size_t i = 0; i < show_len; i++) {
                     sprintf(buf + i * 3, "%02X ", hmodbusRTU->RxBuf[i]);
                 }
-                ULOG_ERROR("[Modbus][CRC] check error! crc = 0x%04X, _RxCount = %d,COM : %d ADDR %d reg addr:%d Rev: %s ", crc1, hmodbusRTU->_RxCount, 
-                    hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr,buf);
+                ULOG_ERROR("[M	odbus][CRC] check error! crc = 0x%04X, _RxCount = %d,COM : %d ADDR %d reg addr:%d Rev: %s ", crc1, hmodbusRTU->_RxCount,
+                           hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr, buf);
 
                 hmodbusRTU->_RxCount = 0; /* 必须清零计数器，方便下次帧同步 */
 
@@ -695,12 +679,10 @@ void modbus_rtu_poll(void)
  */
 void modbus_rtu_timeout_handler(void)
 {
-    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++)
-    {
+    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++) {
         ModbusRTUInstance_t *hmodbusRTU = &modbusRTUList[i];
         // Modbus RTU host未使能,掠过执行
-        if (!hmodbusRTU->enabled)
-        {
+        if (!hmodbusRTU->enabled) {
             continue;
         }
 
@@ -708,8 +690,7 @@ void modbus_rtu_timeout_handler(void)
         {
             // 传输超时处理，因为Modbus是发送一个命令就必须等到相应的回复或者超时才能继续下一次命令，
             // 所以这里定义一次传输就是命令到收到回复，注意不是到收到回复并处理完回复。
-            if ((HDL_G4_CPU_Time_GetTick() - hmodbusRTU->tickstart) > hmodbusRTU->TIMEOUT)
-            {
+            if ((HDL_CPU_Time_GetTick() - hmodbusRTU->tickstart) > hmodbusRTU->TIMEOUT) {
                 hmodbusRTU->transEvent = MODBUS_RTU_TRANS_ERR_TRANS_TIMEOUT; /* 通信超时了 */
                 // 超时，传输结束，转变为等待处理传输
                 MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
@@ -720,17 +701,14 @@ void modbus_rtu_timeout_handler(void)
 
 void modbus_rtu_trans_event_inner_handler()
 {
-    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++)
-    {
+    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++) {
         ModbusRTUInstance_t *hmodbusRTU = &modbusRTUList[i];
         // Modbus RTU host未使能,掠过执行
-        if (!hmodbusRTU->enabled)
-        {
+        if (!hmodbusRTU->enabled) {
             continue;
         }
 
-        if (modbus_rtu_host_have_trans_event(hmodbusRTU))
-        {
+        if (modbus_rtu_host_have_trans_event(hmodbusRTU)) {
             modbus_rtu_trans_event_inner_deal(hmodbusRTU);
         }
     }
@@ -739,39 +717,36 @@ void modbus_rtu_trans_event_inner_handler()
 // 这里进行超时处理
 void modbus_rtu_trans_event_inner_deal(ModbusRTUInstance_t *hmodbusRTU)
 {
-    switch (hmodbusRTU->transEvent)
-    {
-    case MODBUS_RTU_TRANS_REV_ACK:
-        // TODO:这里按理来说还应该匹配一些从设备的故障消息(MODBUS 异常码)
-        if (hmodbusRTU->respons_func_code > 0x80)
-        {
+    switch (hmodbusRTU->transEvent) {
+        case MODBUS_RTU_TRANS_REV_ACK:
+            // TODO:这里按理来说还应该匹配一些从设备的故障消息(MODBUS 异常码)
+            if (hmodbusRTU->respons_func_code > 0x80) {
+                MODBUS_RTU_RESET_TRANS_STATE(hmodbusRTU);
+                hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE;
+#if MOD_BUS_DEBUG == 1
+                ULOG_ERROR("[Modbus RTU]: MODBUS RTU TRANS RECEIVE EXCEPTION CODE COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
+#endif // !MOD_BUS_DEBUG
+            }
+            break;
+        case MODBUS_RTU_TRANS_ERR_TRANS_TIMEOUT:
+            MODBUS_RTU_RESET_TRANS_STATE(hmodbusRTU);
+            hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE;
+            if (hmodbusRTU->innerTimeoutEventHandler != NULL) {
+                hmodbusRTU->innerTimeoutEventHandler(hmodbusRTU);
+            }
+#if MOD_BUS_DEBUG == 1
+            ULOG_ERROR("[Modbus RTU]: MODBUS_RTU_TRANS_ERR_TRANS_TIMEOUT COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
+#endif // !MOD_BUS_DEBUG
+            break;
+        case MODBUS_RTU_TRANS_ERR_REV_FRME:
             MODBUS_RTU_RESET_TRANS_STATE(hmodbusRTU);
             hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE;
 #if MOD_BUS_DEBUG == 1
-            ULOG_ERROR("[Modbus RTU]: MODBUS RTU TRANS RECEIVE EXCEPTION CODE COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
+            ULOG_ERROR("[Modbus RTU]: MODBUS_RTU_TRANS_ERR_REV_FRME COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
 #endif // !MOD_BUS_DEBUG
-        }
-        break;
-    case MODBUS_RTU_TRANS_ERR_TRANS_TIMEOUT:
-        MODBUS_RTU_RESET_TRANS_STATE(hmodbusRTU);
-        hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE;
-        if (hmodbusRTU->innerTimeoutEventHandler != NULL)
-        {
-            hmodbusRTU->innerTimeoutEventHandler(hmodbusRTU);
-        }
-#if MOD_BUS_DEBUG == 1
-        ULOG_ERROR("[Modbus RTU]: MODBUS_RTU_TRANS_ERR_TRANS_TIMEOUT COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
-#endif // !MOD_BUS_DEBUG
-        break;
-    case MODBUS_RTU_TRANS_ERR_REV_FRME:
-        MODBUS_RTU_RESET_TRANS_STATE(hmodbusRTU);
-        hmodbusRTU->transEvent = MODBUS_RTU_TRANS_RES_NONE;
-#if MOD_BUS_DEBUG == 1
-        ULOG_ERROR("[Modbus RTU]: MODBUS_RTU_TRANS_ERR_REV_FRME COM : %d ADDR %d reg addr:%d", hmodbusRTU->com, hmodbusRTU->slaveAddr, hmodbusRTU->RegAddr);
-#endif // !MOD_BUS_DEBUG
-        break;
-    default:
-        break;
+            break;
+        default:
+            break;
     }
 }
 
@@ -785,8 +760,7 @@ void modbus_rtu_trans_event_inner_deal(ModbusRTUInstance_t *hmodbusRTU)
 */
 static void MODH_Read_01H(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (hmodbusRTU->_RxCount > 0)
-    {
+    if (hmodbusRTU->_RxCount > 0) {
 
         hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK;
         // hmodbusRTU->fAck01H_bytes = hmodbusRTU->RxBuf[2]; /* 数据长度 字节数 */
@@ -809,12 +783,11 @@ static void MODH_Read_01H(ModbusRTUInstance_t *hmodbusRTU)
 */
 static void MODH_Read_02H(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (hmodbusRTU->_RxCount > 0)
-    {
+    if (hmodbusRTU->_RxCount > 0) {
         hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK;
         // hmodbusRTU->fAck02H_bytes = hmodbusRTU->RxBuf[2]; /* 数据长度 字节数 */
         // hmodbusRTU->fAck02H_data_ptr = &hmodbusRTU->RxBuf[3];
-        hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
+        hmodbusRTU->RxCount  = hmodbusRTU->_RxCount;
         hmodbusRTU->_RxCount = 0;
         MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
     }
@@ -830,12 +803,11 @@ static void MODH_Read_02H(ModbusRTUInstance_t *hmodbusRTU)
 */
 static void MODH_Read_04H(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (hmodbusRTU->_RxCount > 0)
-    {
+    if (hmodbusRTU->_RxCount > 0) {
         hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK;
         // hmodbusRTU->fAck04H_bytes = hmodbusRTU->RxBuf[2]; /* 数据长度 字节数 */
         // hmodbusRTU->fAck04H_data_ptr = &hmodbusRTU->RxBuf[3];
-        hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
+        hmodbusRTU->RxCount  = hmodbusRTU->_RxCount;
         hmodbusRTU->_RxCount = 0;
         MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
     }
@@ -851,13 +823,11 @@ static void MODH_Read_04H(ModbusRTUInstance_t *hmodbusRTU)
 */
 static void MODH_Read_05H(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (hmodbusRTU->_RxCount > 0)
-    {
-        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr)
-        {
+    if (hmodbusRTU->_RxCount > 0) {
+        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr) {
             hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK; /* 接收到应答 */
-            hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
-            hmodbusRTU->_RxCount = 0;
+            hmodbusRTU->RxCount    = hmodbusRTU->_RxCount;
+            hmodbusRTU->_RxCount   = 0;
             MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
         }
     };
@@ -873,13 +843,11 @@ static void MODH_Read_05H(ModbusRTUInstance_t *hmodbusRTU)
 */
 static void MODH_Read_06H(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (hmodbusRTU->_RxCount > 0)
-    {
-        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr)
-        {
+    if (hmodbusRTU->_RxCount > 0) {
+        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr) {
             hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK; /* 接收到应答 */
-            hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
-            hmodbusRTU->_RxCount = 0;
+            hmodbusRTU->RxCount    = hmodbusRTU->_RxCount;
+            hmodbusRTU->_RxCount   = 0;
             MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
         }
     }
@@ -896,28 +864,26 @@ static void MODH_Read_06H(ModbusRTUInstance_t *hmodbusRTU)
 static void MODH_Read_03H(ModbusRTUInstance_t *hmodbusRTU)
 {
 
-    if (hmodbusRTU->_RxCount > 0)
-    {
+    if (hmodbusRTU->_RxCount > 0) {
         hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK;
         uint8_t bytes;
         uint8_t *p;
         bytes = hmodbusRTU->RxBuf[2]; /* 数据长度 字节数 */
-        p = &hmodbusRTU->RxBuf[3];
+        p     = &hmodbusRTU->RxBuf[3];
 
         // 用寄存器数量来计数缓存数据，同时计算寄存器数量采样向下取整的方法，
         // 防止奇怪的数据帧进入程序
-        hmodbusRTU->result.len = bytes;
+        hmodbusRTU->result.len          = bytes;
         hmodbusRTU->result.register_num = bytes / 2;
         if (hmodbusRTU->result.register_num > 4) // TODO:magic number:这个时寄存器缓存的大小
         {
             hmodbusRTU->result.register_num = 4;
         }
-        for (size_t i = 0; i < hmodbusRTU->result.register_num; i++)
-        {
+        for (size_t i = 0; i < hmodbusRTU->result.register_num; i++) {
             hmodbusRTU->result.P[i] = BEBufToUint16(p);
             p += 2; /* 寄存器 */
         }
-        hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
+        hmodbusRTU->RxCount  = hmodbusRTU->_RxCount;
         hmodbusRTU->_RxCount = 0; // 清除内部接收缓存的数据
         MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
     }
@@ -944,13 +910,11 @@ void MODH_Read_10H(ModbusRTUInstance_t *hmodbusRTU)
             CRC校验高字节           12
             CRC校验低字节           98
     */
-    if (hmodbusRTU->_RxCount > 0)
-    {
-        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr)
-        {
+    if (hmodbusRTU->_RxCount > 0) {
+        if (hmodbusRTU->RxBuf[0] == hmodbusRTU->slaveAddr) {
             hmodbusRTU->transEvent = MODBUS_RTU_TRANS_REV_ACK; /* 接收到应答 */
-            hmodbusRTU->RxCount = hmodbusRTU->_RxCount;
-            hmodbusRTU->_RxCount = 0; // 清除内部接收缓存的数据
+            hmodbusRTU->RxCount    = hmodbusRTU->_RxCount;
+            hmodbusRTU->_RxCount   = 0; // 清除内部接收缓存的数据
             MODBUS_RTU_SET_TRANS_STATE(hmodbusRTU, MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE);
         }
     }
@@ -970,26 +934,21 @@ uint8_t modbus_rtu_host_read_01H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slaveA
     uint8_t i;
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
-        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num);   /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+    for (i = 0; i < NUM; i++) {
+        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num); /* 发送命令 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();  /* 记录命令发送的时刻 */
 
         while (1) /* 等待应答,超时或接收到应答则break  */
         {
             modbus_rtu_handler();
 
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1014,25 +973,19 @@ uint8_t modbus_rtu_host_read_02H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slaveA
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send02H(hmodbusRTU, slaveAddr, _reg, _num);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1057,25 +1010,19 @@ uint8_t modbus_rtu_host_read_03H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slaveA
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send03H(hmodbusRTU, slaveAddr, _reg, _num);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1102,26 +1049,20 @@ uint8_t modbus_rtu_host_read_04H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slaveA
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send04H(hmodbusRTU, slaveAddr, _reg, _num);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
 
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1147,26 +1088,20 @@ uint8_t modbus_rtu_host_write_05H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slave
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send05H(hmodbusRTU, slaveAddr, _reg, _value);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
 
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1194,26 +1129,20 @@ uint8_t modbus_rtu_host_write_06H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slave
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send06H(hmodbusRTU, slaveAddr, _reg, _value);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
 
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1241,25 +1170,19 @@ uint8_t modbus_rtu_host_write_10H(ModbusRTUInstance_t *hmodbusRTU, uint8_t slave
     uint8_t i;
     uint8_t status = 0; // 默认失败
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-    }
-    else
-    {
+    } else {
         return status;
     }
 
-    for (i = 0; i < NUM; i++)
-    {
+    for (i = 0; i < NUM; i++) {
         MODH_Send10H(hmodbusRTU, slaveAddr, _reg, _num, _buf);
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
 
-        while (1)
-        {
+        while (1) {
             modbus_rtu_handler();
-            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-            {
+            if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
                 break;       /* 传输结束了，需要去处理传输结果 */
                 i = NUM - 1; // 跳出For循环。
             }
@@ -1321,34 +1244,34 @@ void modbus_rtu_handler(void)
  */
 void modbus_rtu_host_init(ModbusRTUInstance_t *hmodbusRTU, int baud, char parity, int data_bit)
 {
-    hmodbusRTU->TIMEOUT = 30;
+    hmodbusRTU->TIMEOUT  = 30;
     hmodbusRTU->_TxCount = 0;
     hmodbusRTU->_TxCount = 0;
-    uint32_t wordLen = LL_USART_DATAWIDTH_8B;
-    uint32_t parity_ = LL_USART_PARITY_NONE;
-    uint32_t stopBit = LL_USART_STOPBITS_1;
-    wordLen = data_bit == 7 ? LL_USART_DATAWIDTH_7B : LL_USART_DATAWIDTH_8B;
-    wordLen = data_bit == 9 ? LL_USART_DATAWIDTH_9B : LL_USART_DATAWIDTH_8B;
-    parity_ = parity == 'E' ? LL_USART_PARITY_EVEN : LL_USART_PARITY_NONE;
-    parity_ = parity == 'O' ? LL_USART_PARITY_ODD : LL_USART_PARITY_NONE;
+    uint32_t wordLen     = LL_USART_DATAWIDTH_8B;
+    uint32_t parity_     = LL_USART_PARITY_NONE;
+    uint32_t stopBit     = LL_USART_STOPBITS_1;
+    wordLen              = data_bit == 7 ? LL_USART_DATAWIDTH_7B : LL_USART_DATAWIDTH_8B;
+    wordLen              = data_bit == 9 ? LL_USART_DATAWIDTH_9B : LL_USART_DATAWIDTH_8B;
+    parity_              = parity == 'E' ? LL_USART_PARITY_EVEN : LL_USART_PARITY_NONE;
+    parity_              = parity == 'O' ? LL_USART_PARITY_ODD : LL_USART_PARITY_NONE;
 
-    stopBit = parity_ == LL_USART_PARITY_NONE ? LL_USART_STOPBITS_2 : LL_USART_STOPBITS_1;
+    stopBit          = parity_ == LL_USART_PARITY_NONE ? LL_USART_STOPBITS_2 : LL_USART_STOPBITS_1;
     hmodbusRTU->baud = baud;
 
     /* 根据波特率，获取需要延迟的时间 */
-    hmodbusRTU->usTimeOut35 = 1000000.0f / baud * 11.0f * 3.5f + 0.5f; // 1秒的微秒数/波特率*11bit的帧长度*3.5字符+0.5f四舍五入
-    hmodbusRTU->usTimeOut15 = 1000000.0f / baud * 11.0f * 1.5f + 0.5f; // 1秒的微秒数/波特率*11bit的帧长度*3.5字符+0.5f四舍五入
+    hmodbusRTU->usTimeOut35       = 1000000.0f / baud * 11.0f * 3.5f + 0.5f; // 1秒的微秒数/波特率*11bit的帧长度*3.5字符+0.5f四舍五入
+    hmodbusRTU->usTimeOut15       = 1000000.0f / baud * 11.0f * 1.5f + 0.5f; // 1秒的微秒数/波特率*11bit的帧长度*3.5字符+0.5f四舍五入
     hmodbusRTU->lastRevByteUsTick = 0;
 
     hmodbusRTU->gpio_init();
-    Uart_SetWriteOverCallback(hmodbusRTU->com, hmodbusRTU->release_bus);
+    Uart_SetWriteOverCallback(hmodbusRTU->com, (UartWriteOverCallback_t)hmodbusRTU->release_bus, NULL);
 #if USEING_POLL_MODE_TO_GET_CHAR_STREAM == 0
     Uart_RegisterReceiveCharCallback(hmodbusRTU->com, hmodbusRTU->receive_char_callback);
 #endif // USEING_POLL_MODE_TO_GET_CHAR_STREAM
 
     Uart_Init(hmodbusRTU->com, baud, wordLen, parity_, stopBit);
     hmodbusRTU->innerTimeoutEventHandler = NULL;
-    hmodbusRTU->enabled = 1;
+    hmodbusRTU->enabled                  = 1;
 }
 
 /**
@@ -1357,15 +1280,13 @@ void modbus_rtu_host_init(ModbusRTUInstance_t *hmodbusRTU, int baud, char parity
  */
 static void modbus_rtu_host_uart_msg_fatch()
 {
-    static uint32_t data_len = 0;
-    static uint8_t buf = 0;
+    static uint32_t data_len        = 0;
+    static uint8_t buf              = 0;
     ModbusRTUInstance_t *hmodbusRTU = NULL;
-    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++)
-    {
+    for (size_t i = 0; i < MODBUS_RTUS_HOST_NUM; i++) {
         hmodbusRTU = &modbusRTUList[i];
         // Modbus RTU host未使能
-        if (!hmodbusRTU->enabled)
-        {
+        if (!hmodbusRTU->enabled) {
             continue;
         }
 
@@ -1373,14 +1294,12 @@ static void modbus_rtu_host_uart_msg_fatch()
         // 大于t1.5小于t3.5判定为异常，不过要保证计时精度足够，这里没有实现。
         // 实际要实现t1.5超时建议是大于t1.6小于t3.0
         //  && (hmodbusRTU->RxCount > 0)收到了一个字节数据才开始检查超时。
-        if (((HDL_G4_CPU_Time_GetUsTick() - hmodbusRTU->lastRevByteUsTick) > hmodbusRTU->usTimeOut35) && (hmodbusRTU->_RxCount > 0))
-        {
+        if (((HDL_CPU_Time_GetUsTick() - hmodbusRTU->lastRevByteUsTick) > hmodbusRTU->usTimeOut35) && (hmodbusRTU->_RxCount > 0)) {
             MODH_RxTimeOut(hmodbusRTU);
         }
 
         data_len = Uart_Read(hmodbusRTU->com, &buf, 1);
-        if (data_len > 0)
-        {
+        if (data_len > 0) {
             MODH_ReciveNew(hmodbusRTU, buf);
         }
     }
@@ -1401,12 +1320,11 @@ uint8_t modbus_rtu_host_read_cmd_01H(ModbusRTUInstance_t *hmodbusRTU, uint8_t sl
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num);   /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令发送的时刻 */
-        status = 1;
+        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num); /* 发送命令 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();  /* 记录命令发送的时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1416,12 +1334,11 @@ uint8_t modbus_rtu_host_read_cmd_02H(ModbusRTUInstance_t *hmodbusRTU, uint8_t sl
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num);   /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令的发送时刻 */
-        status = 1;
+        MODH_Send01H(hmodbusRTU, slaveAddr, _reg, _num); /* 发送命令 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();  /* 记录命令的发送时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1430,12 +1347,11 @@ uint8_t modbus_rtu_host_read_cmd_03H(ModbusRTUInstance_t *hmodbusRTU, uint8_t sl
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-        MODH_Send03H(hmodbusRTU, slaveAddr, _reg, _num);   /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令的发送时刻 */
-        status = 1;
+        MODH_Send03H(hmodbusRTU, slaveAddr, _reg, _num); /* 发送命令 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();  /* 记录命令的发送时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1444,12 +1360,11 @@ uint8_t modbus_rtu_host_read_cmd_04H(ModbusRTUInstance_t *hmodbusRTU, uint8_t sl
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
-        MODH_Send04H(hmodbusRTU, slaveAddr, _reg, _num);   /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令的发送时刻 */
-        status = 1;
+        MODH_Send04H(hmodbusRTU, slaveAddr, _reg, _num); /* 发送命令 */
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();  /* 记录命令的发送时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1458,12 +1373,11 @@ uint8_t modbus_rtu_host_write_cmd_05H(ModbusRTUInstance_t *hmodbusRTU, uint8_t s
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
         MODH_Send05H(hmodbusRTU, slaveAddr, _reg, _value); /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令的发送时刻 */
-        status = 1;
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();    /* 记录命令的发送时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1472,12 +1386,11 @@ uint8_t modbus_rtu_host_write_cmd_06H(ModbusRTUInstance_t *hmodbusRTU, uint8_t s
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
         MODH_Send06H(hmodbusRTU, slaveAddr, _reg, _value); /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick(); /* 记录命令的发送时刻 */
-        status = 1;
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();    /* 记录命令的发送时刻 */
+        status                = 1;
     }
 
     return status;
@@ -1486,12 +1399,11 @@ uint8_t modbus_rtu_host_write_cmd_10H(ModbusRTUInstance_t *hmodbusRTU, uint8_t s
 {
     uint8_t status = 0;
     // 处于空闲状态
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_IDLE) {
         hmodbusRTU->transStageState = MODBUS_RTU_TRANS_STATE_TRANSMITING;
         MODH_Send10H(hmodbusRTU, slaveAddr, _reg, _num, _buf); /* 发送命令 */
-        hmodbusRTU->tickstart = HDL_G4_CPU_Time_GetTick();     /* 记录命令的发送时刻 */
-        status = 1;
+        hmodbusRTU->tickstart = HDL_CPU_Time_GetTick();        /* 记录命令的发送时刻 */
+        status                = 1;
     }
     return status;
 }
@@ -1519,19 +1431,16 @@ inline uint8_t modbus_rtu_host_have_trans_event(ModbusRTUInstance_t *hmodbusRTU)
 uint8_t modbus_rtu_host_match_event(ModbusRTUInstance_t *hmodbusRTU, ModbusRTU_TransEvent_t event, uint8_t slave_addr, uint8_t func_code)
 {
     // 没有事件
-    if (hmodbusRTU->transStageState != MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-    {
+    if (hmodbusRTU->transStageState != MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
         return 0;
     }
 
     // 匹配所有事件
-    if (event == MODBUS_RTU_TRANS_ANY_EVENT)
-    {
+    if (event == MODBUS_RTU_TRANS_ANY_EVENT) {
         return (hmodbusRTU->transEvent != MODBUS_RTU_TRANS_RES_NONE);
     }
 
-    if (slave_addr == MODBUS_RTU_ANY_ADDRESS)
-    {
+    if (slave_addr == MODBUS_RTU_ANY_ADDRESS) {
         return (hmodbusRTU->transEvent == event) &&
                (hmodbusRTU->respons_func_code == func_code);
     }
@@ -1551,8 +1460,7 @@ uint8_t modbus_rtu_host_match_event(ModbusRTUInstance_t *hmodbusRTU, ModbusRTU_T
  */
 inline void modbus_rtu_host_clear_all_trans_event(ModbusRTUInstance_t *hmodbusRTU)
 {
-    if (modbus_rtu_host_have_trans_event(hmodbusRTU))
-    {
+    if (modbus_rtu_host_have_trans_event(hmodbusRTU)) {
         // modbus_rtu_trans_event_inner_deal(hmodbusRTU);
         // 如果不在这里清除那就只有在发送时清除，这样可以实现查询到事件后不处理就清除，在某些情况下有用
         // 例如可以保证完全能够控制处理完数据后再发新的命令的情况，但是这里先禁止这种情况。
@@ -1571,8 +1479,7 @@ inline void modbus_rtu_host_clear_all_trans_event(ModbusRTUInstance_t *hmodbusRT
 uint8_t modbus_rtu_host_query_trans_result(ModbusRTUInstance_t *hmodbusRTU)
 {
     uint8_t status = 0;
-    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE)
-    {
+    if (hmodbusRTU->transStageState == MODBUS_RTU_TRANS_STATE_WAITING_DISPOSE) {
         // 在内部就处理掉一些列错误事件，例如超时，这样就不需要用户操心超时的问题了。
         modbus_rtu_trans_event_inner_deal(hmodbusRTU);
         status = hmodbusRTU->transEvent == MODBUS_RTU_TRANS_REV_ACK;
@@ -1591,12 +1498,11 @@ int modbus_rtu_get_data_uint16(ModbusRTUInstance_t *hmodbusRTU, uint16_t *pBuf, 
 {
     int read_len = 0; // 实际要读取几个指定类型的数据
     // 这里假定了收到的数据是正常的Modbus帧
-    read_len = hmodbusRTU->RxBuf[2] / sizeof(uint16_t); /* 数据长度 字节数 */
-    read_len = read_len > Num ? Num : read_len;
+    read_len      = hmodbusRTU->RxBuf[2] / sizeof(uint16_t); /* 数据长度 字节数 */
+    read_len      = read_len > Num ? Num : read_len;
     uint8_t *data = &hmodbusRTU->RxBuf[3];
 
-    for (size_t i = 0; i < read_len; i++)
-    {
+    for (size_t i = 0; i < read_len; i++) {
         pBuf[i] = ((uint16_t)data[0] << 8) | ((uint16_t)data[1]);
         data += sizeof(uint16_t);
     }
@@ -1615,13 +1521,12 @@ int modbus_rtu_get_data_int16(ModbusRTUInstance_t *hmodbusRTU, int16_t *pBuf, in
 {
     int read_len = 0; // 实际要读取几个指定类型的数据
     // 这里假定了收到的数据是正常的Modbus帧
-    read_len = hmodbusRTU->RxBuf[2] / sizeof(int16_t); /* 数据长度 字节数 */
-    read_len = read_len > Num ? Num : read_len;
+    read_len      = hmodbusRTU->RxBuf[2] / sizeof(int16_t); /* 数据长度 字节数 */
+    read_len      = read_len > Num ? Num : read_len;
     uint8_t *data = &hmodbusRTU->RxBuf[3];
-    uint16_t tmp = 0;
-    for (size_t i = 0; i < read_len; i++)
-    {
-        tmp = ((uint16_t)data[0] << 8) | ((uint16_t)data[1]);
+    uint16_t tmp  = 0;
+    for (size_t i = 0; i < read_len; i++) {
+        tmp     = ((uint16_t)data[0] << 8) | ((uint16_t)data[1]);
         pBuf[i] = *((int16_t *)(&tmp));
         data += sizeof(int16_t);
     }
