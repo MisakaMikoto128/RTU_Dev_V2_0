@@ -340,7 +340,7 @@
               <MiscControls>-Wno-invalid-source-encoding</MiscControls>
               <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32G473xx,ULOG_ENABLED</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include;../CHIP;../LIB;../HDL;..\TEST;..\BFL;..\APP;..\3rdparty;..\3rdparty\AT-Command\include;..\3rdparty\ulog\src;..\TEST;..\B1;..\B2;..\FATFS\Target;..\FATFS\App;..\Middlewares\Third_Party\FatFs\src;..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F;..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2;..\Middlewares\Third_Party\FreeRTOS\Source\include</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include;../CHIP;../LIB;../HDL;..\TEST;..\BFL;..\APP;..\3rdparty;..\3rdparty\AT-Command\include;..\3rdparty\ulog\src;..\TEST;..\B1;..\B2;..\FATFS\Target;..\FATFS\App;..\Middlewares\Third_Party\FatFs\src;..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F;..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2;..\Middlewares\Third_Party\FreeRTOS\Source\include;..\Middlewares\Third_Party\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -540,6 +540,11 @@
               <FileType>1</FileType>
               <FilePath>..\HDL\HDL_CPU_Time_test.c</FilePath>
             </File>
+            <File>
+              <FileName>HDL_SPI.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HDL\HDL_SPI.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -614,6 +619,16 @@
               <FileName>ulog.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\3rdparty\ulog\src\ulog.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_spi_sdcard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\3rdparty\sdcard\bsp_spi_sdcard.c</FilePath>
+            </File>
+            <File>
+              <FileName>sdcard_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\3rdparty\sdcard\sdcard_test.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -23,6 +23,7 @@
 #include "BFL_LED.h"
 #include "HDL_IWDG.h"
 #include "HDL_ADC.h"
+#include "HDL_SPI.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -32,6 +33,10 @@
 #include "cqueue.h"
 #include "HDL_CPU_Time.h"
 #include "test.h"
+
+#include "./sdcard/bsp_spi_sdcard.h"
+#include "./sdcard/sdcard_test.h"
+
 typedef struct tagSysInfo_t {
     uint32_t devid;
     uint8_t mode;
@@ -48,25 +53,9 @@ typedef struct tagSys_t {
 } Sys_t;
 
 Sys_t sys = {0};
-/**
- * @brief 解析发送的RTU-远端数据包
- *
- * @param buf 数据包缓存。
- * @param output_type 输出类型，0原始字节码，1解析数据。
- */
-void temp_humi_test(sc_byte_buffer *buf, int output_type);
-void sensor_code_displacement_test(sc_byte_buffer *buf, int output_type);
-void anchor_cable_gauge_test(sc_byte_buffer *buf, int output_type);
-void wind_speed_and_direction_test(sc_byte_buffer *buf, int output_type);
-void solar_radiation_test(sc_byte_buffer *buf, int output_type);
-void attitude_sensor_test(sc_byte_buffer *buf, int output_type);
-void inclination_angle_sensor_test(sc_byte_buffer *buf, int output_type);
-void wind_speed_and_direction_test(sc_byte_buffer *buf, int output_type);
 
 static uint8_t rtu_packet_buf[1024 * 2] = {0};
 static uint8_t aBuf[1500];
-
-static uint8_t read_buf[200];
 static uint8_t _4G_rev_buf[200];
 
 #define RS485_3_DIR_PIN           GPIO_PIN_10
@@ -118,6 +107,8 @@ void FatFs_Init();
  */
 void APP_Main()
 {
+    HDL_CPU_Time_Init();
+
     LoopFrequencyTest_t loop_frq_test = {
         .measure_time = 1000, // 测试1秒钟
                               // 其他成员默认初始化为0.
@@ -133,19 +124,19 @@ void APP_Main()
     sc_byte_buffer _4G_rev_buffer;
     sc_byte_buffer_init(&_4G_rev_buffer, _4G_rev_buf, sizeof(_4G_rev_buf));
 
-    HDL_CPU_Time_Init();
     HDL_RTC_Init();
     // HDL_ADC_Init();
     // HDL_ADC_Enable(); // 使能
     // HDL_WATCHDOG_Init(20);
     ulog_init_user();
+    BFL_LED_Init();
 
     ULOG_INFO("====================================================================");
     ULOG_INFO("[Bootloader] Bootloader start.");
     ULOG_INFO("====================================================================");
 
-    // App初始化
     FatFs_Init();
+    // App初始化
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);
     LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -190,7 +181,7 @@ void APP_Main()
     //	}
 
     uint32_t last_recv_time = 0;
-
+    PeriodREC_t s_tims1;
     while (1) {
         uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
         if (dwLen > 0) {
@@ -216,6 +207,10 @@ void APP_Main()
             BFL_4G_TCP_Write(SOCKET0, (uint8_t *)sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer));
 
             sc_byte_buffer_clear(&_4G_rev_buffer);
+        }
+
+        if (period_query_user(&s_tims1, 1000)) {
+            BFL_LED_Toggle(LED1);
         }
 
         //    if (BFL_4G_TCP_Writeable(0) && Sensor_Queue_Read(&var))
@@ -258,13 +253,11 @@ void APP_Main()
         //    }
 
         BFL_4G_Poll();
-        // LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
-        // LL_LPM_EnableDeepSleep();
-        //    if (BFL_4G_TCP_Readable(SOCKET0))
-        //    {
-        //      uint32_t len = BFL_4G_TCP_Read(SOCKET0, (uint8_t *)buf, 80);
-        //      buf[len] = '\0';
-        //      ULOG_INFO("Read:%s", buf);
-        //    }
+
+        if (BFL_4G_TCP_Readable(SOCKET0)) {
+            uint32_t len = BFL_4G_TCP_Read(SOCKET0, (uint8_t *)buf, 80);
+            buf[len]     = '\0';
+            ULOG_INFO("Read:%s", buf);
+        }
     }
 }

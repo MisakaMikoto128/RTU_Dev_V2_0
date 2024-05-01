@@ -16,7 +16,12 @@
 extern "C" {
 #endif
 
-#define UNUSED(x) (void)(x)
+#include <stdint.h>
+typedef uint8_t byte_t;
+
+#ifndef UNUSED
+#define UNUSED(X) (void)X
+#endif
 #ifdef __cplusplus
 }
 #endif

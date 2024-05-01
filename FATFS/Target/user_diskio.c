@@ -39,10 +39,17 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #include "CHIP_W25Q512.h"
+#include "./sdcard/bsp_spi_sdcard.h"
+#include "log.h"
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
+/* 为每个设备定义一个物理编号 */
+#define ATA       1 // SD卡
+#define SPI_FLASH 0 // 预留外部SPI Flash使用
 
+// 固定只支持blocksize大小为512的卡，兼容大于512的卡时，该卡容量会变小
+#define SD_BLOCKSIZE 512 // SDCardInfo.CardBlockSize
 /* USER CODE END DECL */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -80,20 +87,30 @@ DSTATUS USER_initialize(
     BYTE pdrv /* Physical drive nmuber to identify the drive */
 )
 {
-  /* USER CODE BEGIN INIT */
-  Stat = STA_NOINIT;
-  int32_t ret = CHIP_W25Q512_Init();
-
-  if (ret == 0)
-  {
-    Stat = RES_OK;
-  }
-  else
-  {
+    /* USER CODE BEGIN INIT */
     Stat = STA_NOINIT;
-  }
-  return Stat;
-  /* USER CODE END INIT */
+
+    switch (pdrv) {
+        case ATA: /* SD CARD */
+            if (SD_Card_Init() == SD_RESPONSE_NO_ERROR) {
+                Stat &= ~STA_NOINIT;
+            } else {
+                Stat |= STA_NOINIT;
+            }
+            break;
+        case SPI_FLASH: /* SPI Flash */
+            if (CHIP_W25Q512_Init() == 0) {
+                Stat &= ~STA_NOINIT;
+            } else {
+                Stat |= STA_NOINIT;
+            }
+            break;
+        default:
+            Stat = STA_NOINIT;
+    }
+
+    return Stat;
+    /* USER CODE END INIT */
 }
 
 /**
@@ -105,11 +122,27 @@ DSTATUS USER_status(
     BYTE pdrv /* Physical drive number to identify the drive */
 )
 {
-  /* USER CODE BEGIN STATUS */
-  Stat = STA_NOINIT;
-  Stat = RES_OK;
-  return Stat;
-  /* USER CODE END STATUS */
+    /* USER CODE BEGIN STATUS */
+    Stat = STA_NOINIT;
+
+    DSTATUS status = STA_NOINIT;
+    switch (pdrv) {
+        case ATA: /* SD CARD */
+            if (SD_Detect() == SD_PRESENT) {
+                status &= ~STA_NODISK;
+            } else {
+                status |= STA_NODISK;
+            }
+            break;
+        case SPI_FLASH: /* SPI Flash */
+            status &= ~STA_NOINIT;
+            break;
+        default:
+            status = STA_NOINIT;
+    }
+
+    return Stat;
+    /* USER CODE END STATUS */
 }
 
 /**
@@ -127,14 +160,33 @@ DRESULT USER_read(
     UINT count    /* Number of sectors to read */
 )
 {
-  /* USER CODE BEGIN READ */
+    /* USER CODE BEGIN READ */
 
-  for (UINT i = 0; i < count; i++)
-  {
-    CHIP_W25Q512_read_one_sector(sector + i, buff + i * W25Q512_SECTOR_SIZE);
-  }
-  return RES_OK;
-  /* USER CODE END READ */
+    DRESULT status    = RES_PARERR;
+    SD_Error SD_state = SD_RESPONSE_NO_ERROR;
+
+    switch (pdrv) {
+        case ATA: /* SD CARD */
+            SD_state = SD_ReadMultiBlocks(buff, (uint64_t)sector * SD_BLOCKSIZE, SD_BLOCKSIZE, count);
+            if (SD_state != SD_RESPONSE_NO_ERROR) {
+                status = RES_ERROR;
+            } else {
+                status = RES_OK;
+            }
+            break;
+        case SPI_FLASH: /* SPI Flash */
+            for (UINT i = 0; i < count; i++) {
+                CHIP_W25Q512_read_one_sector(sector + i, buff + i * W25Q512_SECTOR_SIZE);
+            }
+            status = RES_OK;
+            break;
+        default:
+            status = RES_PARERR;
+            break;
+    }
+
+    /* USER CODE END READ */
+    return status;
 }
 
 #include "log.h"
@@ -154,16 +206,36 @@ DRESULT USER_write(
     UINT count        /* Number of sectors to write */
 )
 {
-  /* USER CODE BEGIN WRITE */
-  /* USER CODE HERE */
+    /* USER CODE BEGIN WRITE */
+    /* USER CODE HERE */
+    DRESULT status    = RES_PARERR;
+    SD_Error SD_state = SD_RESPONSE_NO_ERROR;
+    if (!count) {
+        return RES_PARERR; /* Check parameter */
+    }
+    switch (pdrv) {
+        case ATA: /* SD CARD */
+            SD_state = SD_WriteMultiBlocks((uint8_t *)buff, (uint64_t)sector * SD_BLOCKSIZE, SD_BLOCKSIZE, count);
+            if (SD_state != SD_RESPONSE_NO_ERROR) {
+                status = RES_PARERR;
+            } else {
+                status = RES_OK;
+            }
+            break;
 
-  for (UINT i = 0; i < count; i++)
-  {
-    w25q512_write_one_sector(sector + i, (uint8_t*)buff + i * W25Q512_SECTOR_SIZE);
-    ULOG_INFO("[FatFS] write sector %d", sector + i);
-  }
-  return RES_OK;
-  /* USER CODE END WRITE */
+        case SPI_FLASH:
+            for (UINT i = 0; i < count; i++) {
+                w25q512_write_one_sector(sector + i, (uint8_t *)buff + i * W25Q512_SECTOR_SIZE);
+                ULOG_INFO("[FatFS] write sector %d", sector + i);
+            }
+            status = RES_OK;
+            break;
+
+        default:
+            status = RES_PARERR;
+    }
+    /* USER CODE END WRITE */
+    return status;
 }
 #endif /* _USE_WRITE == 1 */
 
@@ -181,32 +253,43 @@ DRESULT USER_ioctl(
     void *buff /* Buffer to send/receive control data */
 )
 {
-  /* USER CODE BEGIN IOCTL */
-  DRESULT res = RES_ERROR;
+    /* USER CODE BEGIN IOCTL */
+    DRESULT res = RES_PARERR;
 
-  switch (cmd)
-  {
-  case CTRL_SYNC:
-    res = RES_OK;
-    break;
-  case GET_SECTOR_SIZE:
-    *(WORD *)buff = (WORD)W25Q512_SECTOR_SIZE;
-    res = RES_OK;
-    break;
-  case GET_BLOCK_SIZE:
-    *(WORD *)buff = 1;
-    res = RES_OK;
-    break;
-  case GET_SECTOR_COUNT:
-    *(DWORD *)buff = W25Q512_SECTOR_COUNT;
-    res = RES_OK;
-    break;
-  default:
-    res = RES_PARERR;
-    break;
-  }
+    switch (cmd) {
+        case CTRL_SYNC:
+            res = RES_OK;
+            break;
+        case GET_SECTOR_SIZE:
+            if (pdrv == ATA) {
+                *(WORD *)buff = SD_BLOCKSIZE;
+                res           = RES_OK;
+            } else if (pdrv == SPI_FLASH) {
+                *(WORD *)buff = (WORD)W25Q512_SECTOR_SIZE;
+                res           = RES_OK;
+            }
+            break;
+        case GET_BLOCK_SIZE:
+            // Get erase block size in unit of sector (DWORD)
+            if (pdrv == ATA || pdrv == SPI_FLASH) {
+                *(DWORD *)buff = 1;
+                res            = RES_OK;
+            }
+            break;
+        case GET_SECTOR_COUNT:
+            if (pdrv == ATA) {
+                *(DWORD *)buff = SDCardInfo.CardCapacity / SDCardInfo.CardBlockSize;
+                res            = RES_OK;
+            } else if (pdrv == SPI_FLASH) {
+                *(DWORD *)buff = W25Q512_SECTOR_COUNT;
+                res            = RES_OK;
+            }
+            break;
+        default:
+            break;
+    }
 
-  return res;
-  /* USER CODE END IOCTL */
+    /* USER CODE END IOCTL */
+    return res;
 }
 #endif /* _USE_IOCTL == 1 */

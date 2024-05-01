@@ -136,6 +136,7 @@ DWORD get_fattime(void)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN Application */
 static FATFS fs;
+static FATFS fs_sd;
 static void *buff[2048];
 static FIL file;
 
@@ -260,10 +261,44 @@ bool fatfs_is_file_exist(const char *path)
     }
 }
 
-void FatFs_Init()
+void W25Q512_Flash_FatFs_Init()
 {
     MX_FATFS_Init();
     fatfs_register();
+}
+
+void SD_Card_FatFs_Init()
+{
+    if (FATFS_LinkDriverEx(&USER_Driver, USERPath, 1) != 0)
+    /* USER CODE BEGIN FATFS_Init */
+    {
+        ULOG_INFO("[FatFs] FATFS_LinkDriver failed");
+    } else {
+        Appli_state = APPLICATION_INIT;
+        ULOG_INFO("[FatFs] FATFS_LinkDriver ok");
+    }
+
+    FRESULT g_res;
+    g_res = f_mount(&fs_sd, "1:", 1);
+    if (g_res == FR_NO_FILESYSTEM) {
+        ULOG_INFO("[FatFs] No file systems.");
+        g_res = f_mkfs("1:", FM_ANY, 0, buff, sizeof(buff));
+        f_mount(&fs_sd, "1:", 1);
+        if (g_res != FR_OK)
+            ULOG_INFO("[FatFs] mkfs_failed err code = %d", g_res);
+        else
+            ULOG_INFO("[FatFs] init file systems ok");
+    } else if (g_res != FR_OK) {
+        ULOG_INFO("[FatFs] f_mount failed err code = %d", g_res);
+    } else {
+        ULOG_INFO("[FatFs] flash have file systems");
+    }
+}
+
+void FatFs_Init()
+{
+    W25Q512_Flash_FatFs_Init();
+    SD_Card_FatFs_Init();
 
     // 列出根目录下所有文件和文件夹
     FRESULT res;
@@ -314,18 +349,18 @@ void FatFs_Init()
             uint32_t file_size = f_size(pFile);
             ULOG_INFO("[fatfs] file size = %u", file_size);
 
-//            for (uint32_t i = 0; i < file_size;) {
-//                memset(rtext, 0, sizeof(rtext));
-//                res = f_read(pFile, rtext, sizeof(rtext) - 1, &br);
-//                if (res == FR_OK) {
-//                    ULOG_INFO("[fatfs] read test.txt ok");
-//                    ULOG_INFO("[fatfs] test.txt content: %s %u", rtext, br);
-//                    i += br;
-//                } else {
-//                    ULOG_INFO("[fatfs] read test.txt failed");
-//                    break;
-//                }
-//            }
+            //            for (uint32_t i = 0; i < file_size;) {
+            //                memset(rtext, 0, sizeof(rtext));
+            //                res = f_read(pFile, rtext, sizeof(rtext) - 1, &br);
+            //                if (res == FR_OK) {
+            //                    ULOG_INFO("[fatfs] read test.txt ok");
+            //                    ULOG_INFO("[fatfs] test.txt content: %s %u", rtext, br);
+            //                    i += br;
+            //                } else {
+            //                    ULOG_INFO("[fatfs] read test.txt failed");
+            //                    break;
+            //                }
+            //            }
 
         } else {
             ULOG_INFO("[fatfs] open test.txt failed");
@@ -354,8 +389,6 @@ void FatFs_Init()
     // YmodemReceiveSessionInit(&ymodem_session, ymodem_read, ymodem_write);
 }
 
-
-
 void FatFs_DeInit()
 {
     fatfs_unregister();
@@ -368,7 +401,7 @@ void fatfsTaskFun(void *argument)
     FatFs_Init();
 
     for (;;) {
-        
+
         // YmodemSessionPoll(&ymodem_session);
         // YmodemSessionResult_t result = YmodemSessionGetResult(&ymodem_session);
         // if (result != YMODEM_SESSION_RESULT_NONE)

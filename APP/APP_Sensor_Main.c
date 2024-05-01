@@ -56,7 +56,7 @@ void APP_Sensor_Main()
     SetCommTestPara(&commPara); // 设置通信测试参数
     BFL_4G_Init(&commPara);     // 模块初始化
     BFL_RTU_Packet_init(&pkg, rtu_packet_buf, sizeof(rtu_packet_buf));
-    BFL_LED_init();
+    BFL_LED_Init();
 
     // 初始化RS485 3
     modbus_rtu_host_init(hModbusRTU3, 9600, 'N', 8);
@@ -87,7 +87,7 @@ void APP_Sensor_Main()
 
         // 500 cputick执行一次
         if (period_query_user(&led_period_recorder, 500)) {
-            BFL_LED_toggle(LED1);
+            BFL_LED_Toggle(LED1);
         }
 
         HDL_WATCHDOG_Feed();

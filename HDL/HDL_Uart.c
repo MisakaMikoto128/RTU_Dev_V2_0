@@ -192,7 +192,7 @@ void Uart_Init(COMID_t comId, uint32_t baud, uint32_t wordLen, uint32_t stopBit,
             GPIO_InitStruct.Alternate  = LL_GPIO_AF_7;
             LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
             NVIC_SetPriority(USART1_IRQn,
-                             NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 6, 0));
+                             NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 4, 0));
             NVIC_EnableIRQ(USART1_IRQn);
             USART_InitStruct.BaudRate            = baud;
             USART_InitStruct.DataWidth           = wordLen;

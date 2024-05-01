@@ -11,6 +11,7 @@
  */
 #include "CHIP_EC800M.h"
 #include "HDL_CPU_Time.h"
+#include "log.h"
 #define __CHIP_EC800M_DEBUG 0
 
 /**
@@ -81,24 +82,12 @@ void CHIP_EC800M_Init()
     CHIP_EC800M_ResetOn();
 }
 
-/**
- * @brief This function handles EXTI line[15:10] interrupts.
- */
-void EXTI15_10_IRQHandler(void)
+
+void LL_EXTI_LINE_12_Callback()
 {
-    /* USER CODE BEGIN EXTI15_10_IRQn 0 */
-
-    /* USER CODE END EXTI15_10_IRQn 0 */
-    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_12) != RESET) {
-        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_12);
-        /* USER CODE BEGIN LL_EXTI_LINE_12 */
-
-        /* USER CODE END LL_EXTI_LINE_12 */
-    }
-    /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
-    /* USER CODE END EXTI15_10_IRQn 1 */
+    ULOG_INFO("LL_EXTI_LINE_12_Callback");
 }
+
 
 void CHIP_EC800M_PowerOn()
 {

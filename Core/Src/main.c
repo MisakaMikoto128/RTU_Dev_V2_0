@@ -191,12 +191,12 @@ int main(void)
     // 光伏RTU主程序处理器。
     // sensor_testt();
 
-    // BFL_LED_init();
+    // BFL_LED_Init();
     // while (1)
     // {
     //   for (LED_t led = LED1; led < LED_NUM; led++)
     //   {
-    //     BFL_LED_toggle(led);
+    //     BFL_LED_Toggle(led);
     //     HDL_CPU_Time_DelayMs(1000);
     //   }
     // }

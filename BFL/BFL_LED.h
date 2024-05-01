@@ -14,19 +14,14 @@
 extern "C" {
 #endif
 typedef enum {
-    LED1,
-    LED2,
-    LED3,
-    LED4,
-    LED5,
-    LED6,
+    LED1 = 0,
     LED_NUM,
 } LED_t;
 
-void BFL_LED_init();
-void BFL_LED_on(LED_t led_id);
-void BFL_LED_off(LED_t led_id);
-void BFL_LED_toggle(LED_t led_id);
+void BFL_LED_Init();
+void BFL_LED_On(LED_t led_id);
+void BFL_LED_Off(LED_t led_id);
+void BFL_LED_Toggle(LED_t led_id);
 #ifdef __cplusplus
 }
 #endif
