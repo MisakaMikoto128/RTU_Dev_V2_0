@@ -273,9 +273,10 @@ void Uart_Init(COMID_t comId, uint32_t baud, uint32_t wordLen, uint32_t stopBit,
                 cqueue_create(&pDev->txQueue, pDev->txBuf, COM3_TX_BUF_SIZE, sizeof(uint8_t));
                 cqueue_create(&pDev->rxQueue, pDev->rxBuf, COM3_RX_BUF_SIZE, sizeof(uint8_t));
             }
+            
             LL_RCC_SetUSARTClockSource(LL_RCC_USART3_CLKSOURCE_PCLK1);
             LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART3);
-            LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+            LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOD);
 
             /**USART3 GPIO Configuration
             PD8   ------> USART3_TX

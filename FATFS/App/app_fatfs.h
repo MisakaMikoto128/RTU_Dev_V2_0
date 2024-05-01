@@ -60,10 +60,11 @@ int32_t MX_FATFS_Process(void);
 #define APP_SD_UNPLUGGED           -2
 /* USER CODE END Private defines */
 
-extern FATFS USERFatFs;    /* File system object for USER logical drive */
-extern FIL USERFile;       /* File  object for USER */
+extern FIL USERFile1;       /* File  object for USER */
+extern FIL USERFile2;       /* File  object for USER */
 extern char USERPath[4];   /* USER logical drive path */
-
-#include <stdbool.h>
 void fatfsTaskStart();
+void FatFs_Init();
+void SD_Card_FatFs_DeInit();
+void SD_Card_FatFs_Init();
 #endif /*__APP_FATFS_H */

@@ -123,25 +123,22 @@ DSTATUS USER_status(
 )
 {
     /* USER CODE BEGIN STATUS */
-    Stat = STA_NOINIT;
-
-    DSTATUS status = STA_NOINIT;
+    DSTATUS status = 0;
     switch (pdrv) {
         case ATA: /* SD CARD */
-            if (SD_Detect() == SD_PRESENT) {
-                status &= ~STA_NODISK;
-            } else {
-                status |= STA_NODISK;
+            if (SD_Detect() == SD_NOT_PRESENT) {
+                status = STA_NODISK;
+            } else if (SD_Card_Is_Inited() == false) {
+                status = STA_NOINIT;
             }
             break;
         case SPI_FLASH: /* SPI Flash */
-            status &= ~STA_NOINIT;
             break;
         default:
             status = STA_NOINIT;
     }
 
-    return Stat;
+    return status;
     /* USER CODE END STATUS */
 }
 
@@ -216,23 +213,23 @@ DRESULT USER_write(
     switch (pdrv) {
         case ATA: /* SD CARD */
             SD_state = SD_WriteMultiBlocks((uint8_t *)buff, (uint64_t)sector * SD_BLOCKSIZE, SD_BLOCKSIZE, count);
-            if (SD_state != SD_RESPONSE_NO_ERROR) {
-                status = RES_PARERR;
-            } else {
+            if (SD_state == SD_RESPONSE_NO_ERROR) {
                 status = RES_OK;
             }
+            ULOG_INFO("[FatFS] SD write sector %d, count %d", sector, count);
             break;
 
         case SPI_FLASH:
             for (UINT i = 0; i < count; i++) {
                 w25q512_write_one_sector(sector + i, (uint8_t *)buff + i * W25Q512_SECTOR_SIZE);
-                ULOG_INFO("[FatFS] write sector %d", sector + i);
+                ULOG_INFO("[FatFS] Flash write sector %d", sector + i);
             }
             status = RES_OK;
             break;
 
         default:
             status = RES_PARERR;
+            break;
     }
     /* USER CODE END WRITE */
     return status;

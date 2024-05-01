@@ -34,6 +34,13 @@
 #define RTC_BASE_MINUTE 0U
 #define RTC_BASE_SECOND 0U
 
+struct softRTC_t {
+    uint64_t unixMsTimestamp;   // 1970-1-1以来的总毫秒数
+    bool calibratedAtLeastOnce; // 校准过至少一次
+};
+
+static struct softRTC_t softRTC   = {0};
+static struct softRTC_t *pSoftRTC = &softRTC;
 /**
  * @brief RTC外设初始化。启动RTC，但是不会设置RTC时间。默认LSE时钟源。
  * 设置/获取时间默认使用BIN格式的时间。
@@ -43,7 +50,8 @@ void HDL_RTC_Init()
 {
     LL_RTC_InitTypeDef RTC_InitStruct = {0};
     mtime_t setTime;
-
+    pSoftRTC->calibratedAtLeastOnce = false;
+    pSoftRTC->unixMsTimestamp       = 0;
     // 设置RTC时钟源为LSE
     if (LL_RCC_GetRTCClockSource() != LL_RCC_RTC_CLKSOURCE_LSE) {
         // 使能后备寄存器访问
@@ -123,7 +131,7 @@ uint64_t HDL_RTC_GetTimeTick(uint16_t *pSub)
     uint32_t timestamp = 0;
     mtime_t datetime;
     HDL_RTC_GetStructTime(&datetime);
-    timestamp = mtime_2_utc_sec(&datetime);
+    timestamp = mtime_2_unix_sec(&datetime);
     if (pSub != NULL) {
         *pSub = datetime.wSub;
     }
@@ -168,7 +176,7 @@ void HDL_RTC_GetStructTime(mtime_t *myTime)
 void HDL_RTC_SetTimeTick(uint64_t timestamp)
 {
     mtime_t datetime;
-    mtime_utc_sec_2_time(timestamp, &datetime);
+    mtime_unix_sec_2_time(timestamp, &datetime);
     HDL_RTC_SetStructTime(&datetime);
 }
 
@@ -194,6 +202,7 @@ void HDL_RTC_SetStructTime(mtime_t *myTime)
     RTC_DateStruct.WeekDay = mtime_get_week(myTime->nYear, myTime->nMonth, myTime->nDay);
 
     LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_DateStruct);
+    pSoftRTC->calibratedAtLeastOnce = true;
 }
 
 uint64_t HDL_RTC_GetMsTimestamp()
@@ -201,7 +210,12 @@ uint64_t HDL_RTC_GetMsTimestamp()
     uint64_t timestamp = 0;
     mtime_t datetime;
     HDL_RTC_GetStructTime(&datetime);
-    timestamp = mtime_2_utc_sec(&datetime);
+    timestamp = mtime_2_unix_sec(&datetime);
     timestamp = timestamp * 1000 + HDL_RTC_Subsec2mSec(datetime.wSub);
     return timestamp;
+}
+
+bool HDL_RTC_HasSynced()
+{
+    return pSoftRTC->calibratedAtLeastOnce;
 }

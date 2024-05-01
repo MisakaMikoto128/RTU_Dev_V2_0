@@ -31,6 +31,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 /** @addtogroup Utilities
  * @{
@@ -269,7 +270,8 @@ uint16_t SD_GetStatus(void);
 
 uint8_t SD_WriteByte(uint8_t byte);
 uint8_t SD_ReadByte(void);
-
+uint8_t SD_CD_Has_Change();
+bool SD_Card_Is_Inited();
 #ifdef __cplusplus
 }
 #endif

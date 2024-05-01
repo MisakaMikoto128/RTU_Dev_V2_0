@@ -445,6 +445,11 @@
               <FileType>1</FileType>
               <FilePath>..\BFL\asyn_sys.c</FilePath>
             </File>
+            <File>
+              <FileName>datetime.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BFL\datetime.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

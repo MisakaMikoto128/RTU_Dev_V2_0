@@ -132,7 +132,7 @@ uint8_t mtime_get_week(uint16_t year, uint8_t month, uint8_t day)
  * 返回值：
  *     无
  */
-void mtime_utc_sec_2_time(unsigned int utc_sec, mtime_t *result)
+void mtime_unix_sec_2_time(unsigned int utc_sec, mtime_t *result)
 {
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
@@ -202,7 +202,7 @@ void mtime_utc_sec_2_time(unsigned int utc_sec, mtime_t *result)
  * 返回值：
  *     UTC时间戳
  */
-unsigned int mtime_2_utc_sec(mtime_t *currTime)
+unsigned int mtime_2_unix_sec(mtime_t *currTime)
 {
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
@@ -250,7 +250,7 @@ unsigned int mtime_2_utc_sec(mtime_t *currTime)
 char *mtime_format(unsigned int utc_sec, char *pBuf)
 {
     mtime_t stuTime;
-    mtime_utc_sec_2_time(utc_sec, &stuTime);
+    mtime_unix_sec_2_time(utc_sec, &stuTime);
     sprintf(pBuf, "%04d-%02d-%02d %02d:%02d:%02d", stuTime.nYear, stuTime.nMonth, stuTime.nDay, stuTime.nHour, stuTime.nMin, stuTime.nSec);
     return pBuf;
 }
@@ -258,17 +258,17 @@ char *mtime_format(unsigned int utc_sec, char *pBuf)
 void mtime_add_hours(mtime_t *currTime, unsigned int hours)
 {
     unsigned int timestamp = 0;
-    timestamp              = mtime_2_utc_sec(currTime);
+    timestamp              = mtime_2_unix_sec(currTime);
     timestamp += hours * 60UL * 60UL;
-    mtime_utc_sec_2_time(timestamp, currTime);
+    mtime_unix_sec_2_time(timestamp, currTime);
 }
 
 void mtime_sub_hours(mtime_t *currTime, unsigned int hours)
 {
     unsigned int timestamp = 0;
-    timestamp              = mtime_2_utc_sec(currTime);
+    timestamp              = mtime_2_unix_sec(currTime);
     timestamp -= hours * 60UL * 60UL;
-    mtime_utc_sec_2_time(timestamp, currTime);
+    mtime_unix_sec_2_time(timestamp, currTime);
 }
 
 /**

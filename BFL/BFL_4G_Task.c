@@ -417,7 +417,7 @@ void at_clk_callback(at_response_t *r)
         mtime.nSec   = second;
 
         uint64_t utcTimestamp = 0;
-        utcTimestamp          = mtime_2_utc_sec(&mtime);
+        utcTimestamp          = mtime_2_unix_sec(&mtime);
 
         ULOG_INFO("[4G] %llu->%04d.%02d.%02d %02d:%02d:%02d", utcTimestamp, mtime.nYear, mtime.nMonth, mtime.nDay, mtime.nHour, mtime.nMin, mtime.nSec);
         if (context.setCalibrateTimeByUtcSecondsCb != NULL) {

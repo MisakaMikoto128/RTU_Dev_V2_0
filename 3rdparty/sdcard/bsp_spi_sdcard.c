@@ -48,11 +48,19 @@
 #include "HDL_SPI.h"
 #include "HDL_CPU_Time.h"
 #include "log.h"
+#include "app_fatfs.h"
+
 // 记录卡的类型
 uint8_t SD_Type = SD_TYPE_NOT_SD; // 存储卡的类型
 SD_CardInfo SDCardInfo;           // 用于存储卡的信息
-bool g_sd_spi_if_inited  = false;
-bool g_sd_card_connected = false;
+bool g_sd_spi_if_inited    = false;
+
+bool SD_Card_Is_Inited()
+{
+    return g_sd_spi_if_inited;
+}
+
+bool g_sd_card_has_changed = false;
 #define SD_SPI SPI_1
 
 const char *SD_TypetoString(uint8_t type)
@@ -95,17 +103,10 @@ void LL_EXTI_LINE_11_Callback()
     bool current_level                       = LL_GPIO_IsInputPinSet(SD_DETECT_GPIO_Port, SD_DETECT_Pin);
 
     if (last_level != current_level) {
-        last_level = current_level;
-
+        last_level            = current_level;
         if (HDL_CPU_Time_GetTick() - last_level_change_moment > 1) {
-            if (current_level) {
-                ULOG_INFO("[SD Card] SD Card is removed");
-            } else {
-                ULOG_INFO("[SD Card] SD Card is inserted");
-                SD_Card_Init();
-            }
+            g_sd_card_has_changed = true;
         }
-
         last_level_change_moment = HDL_CPU_Time_GetTick();
     }
 }
@@ -1069,56 +1070,24 @@ uint8_t SD_ReadByte(void)
     return rxData[0];
 }
 
-// /**
-//   * @brief  Write a byte on the SD.
-//   * @param  Data: byte to send.
-//   * @retval None
-//   */
-// uint8_t SD_WriteByte(uint8_t Data)
-// {
-//   /*!< Wait until the transmit buffer is empty */
-//   while(LL_SPI_IsActiveFlag_TXE(SD_SPI) == RESET)
-//   {
-//   }
-
-//   /*!< Send the byte */
-//   LL_SPI_TransmitData8(SD_SPI, Data);
-
-//   /*!< Wait to receive a byte*/
-//   while(LL_SPI_IsActiveFlag_RXNE(SD_SPI) == RESET)
-//   {
-//   }
-
-//   /*!< Return the byte read from the SPI bus */
-//   return LL_SPI_ReceiveData8(SD_SPI);
-// }
-
-// /**
-//   * @brief  Read a byte from the SD.
-//   * @param  None
-//   * @retval The received byte.
-//   */
-// uint8_t SD_ReadByte(void)
-// {
-//   uint8_t Data = 0;
-
-//   /*!< Wait until the transmit buffer is empty */
-//   while (LL_SPI_IsActiveFlag_TXE(SD_SPI) == RESET)
-//   {
-//   }
-//   /*!< Send the byte */
-//   LL_SPI_TransmitData8(SD_SPI, SD_DUMMY_BYTE);
-
-//   /*!< Wait until a data is received */
-//   while (LL_SPI_IsActiveFlag_RXNE(SD_SPI) == RESET)
-//   {
-//   }
-//   /*!< Get the received data */
-//   Data = LL_SPI_ReceiveData8(SD_SPI);
-
-//   /*!< Return the shifted data */
-//   return Data;
-// }
+/**
+ * @brief
+ *
+ * @return uint8_t 0 no change, 1 sd card present, 2 sd card removed
+ */
+uint8_t SD_CD_Has_Change()
+{
+    if (g_sd_card_has_changed) {
+        g_sd_card_has_changed = false;
+        if (SD_Detect() == SD_PRESENT) {
+            return 1;
+        } else {
+            return 2;
+        }
+    } else {
+        return 0;
+    }
+}
 
 /**
  * @}

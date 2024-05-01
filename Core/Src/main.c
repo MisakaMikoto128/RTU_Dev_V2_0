@@ -118,29 +118,10 @@ int main(void)
     /* USER CODE END SysInit */
 
     /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    //  MX_I2C1_Init();
-    //  MX_LPUART1_UART_Init();
-    //  MX_UART4_Init();
-    //  MX_UART5_Init();
-    //  MX_USART1_UART_Init();
-    //  MX_USART2_UART_Init();
-    //  MX_DMA_Init();
-    //  MX_QUADSPI1_Init();
-    //  MX_ADC1_Init();
-    //  MX_ADC2_Init();
-    //  MX_IWDG_Init();
-    //  MX_RTC_Init();
-    //  MX_SPI1_Init();
-    //  MX_TIM1_Init();
-    //  MX_USB_PCD_Init();
-    //  MX_USART3_UART_Init();
-    //  MX_TIM2_Init();
     /* USER CODE BEGIN 2 */
     // W25Q512测试
     // ulog_init_user();
     // CHIP_W25Q512_Init();
-
     // while (true) {
     //     CHIP_W25Q512_io_rate();
     //     CHIP_W25Q512_io_check(12);
@@ -150,7 +131,7 @@ int main(void)
     //     CHIP_W25Q512_sector_io_check();
     // }
 
-    //   CHIP_W25Q512_QFS_test();
+    // CHIP_W25Q512_QFS_test();
     // 串口测试
     // HDL_Uart_fifo_test_loop();
     // HDL_Uart_test_loop();
@@ -202,12 +183,6 @@ int main(void)
     // }
 
     APP_Main();
-    // APP_Main_test();
-    // RTU综合测试
-    // rtu_test();
-    // 4G模块测试
-    // BFL_4G_test();
-
     /* USER CODE END 2 */
 
     /* Infinite loop */

@@ -59,7 +59,7 @@ void RTU_Sampling_Var_get_calibration_time_local(RTU_Sampling_Var_t *pvar, mtime
     uint64_t datetime_ms  = *((uint64_t *)(pvar->data));
     uint32_t datetime_sec = datetime_ms / 1000;
     uint32_t ms           = datetime_ms - datetime_sec * 1000;
-    mtime_utc_sec_2_time(datetime_sec + 8UL * 60UL * 60UL, pdatetime);
+    mtime_unix_sec_2_time(datetime_sec + 8UL * 60UL * 60UL, pdatetime);
     pdatetime->wSub = HDL_RTC_mSec2Subsec(ms);
 }
 

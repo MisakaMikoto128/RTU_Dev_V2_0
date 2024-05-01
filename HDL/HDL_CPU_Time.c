@@ -52,26 +52,26 @@ void HDL_CPU_Time_Init()
     TIM_InitStruct.Autoreload        = 10000UL - 1;
     TIM_InitStruct.ClockDivision     = LL_TIM_CLOCKDIVISION_DIV1;
     TIM_InitStruct.RepetitionCounter = 0;
-    LL_TIM_Init(TIM1, &TIM_InitStruct);
+    LL_TIM_Init(CPU_TIM, &TIM_InitStruct);
 
-    LL_TIM_DisableARRPreload(TIM1);
+    LL_TIM_DisableARRPreload(CPU_TIM);
 
     uint32_t tmpsmcr;
 
     /* Reset the SMS, TS, ECE, ETPS and ETRF bits */
-    tmpsmcr = TIM1->SMCR;
+    tmpsmcr = CPU_TIM->SMCR;
     tmpsmcr &= ~(TIM_SMCR_SMS | TIM_SMCR_TS);
     tmpsmcr &= ~(TIM_SMCR_ETF | TIM_SMCR_ETPS | TIM_SMCR_ECE | TIM_SMCR_ETP);
-    TIM1->SMCR = tmpsmcr;
+    CPU_TIM->SMCR = tmpsmcr;
 
-    LL_TIM_SetClockSource(TIM1, LL_TIM_CLOCKSOURCE_INTERNAL);
-    LL_TIM_SetTriggerOutput(TIM1, LL_TIM_TRGO_RESET);
-    LL_TIM_SetTriggerOutput2(TIM1, LL_TIM_TRGO2_RESET);
-    LL_TIM_DisableMasterSlaveMode(TIM1);
+    LL_TIM_SetClockSource(CPU_TIM, LL_TIM_CLOCKSOURCE_INTERNAL);
+    LL_TIM_SetTriggerOutput(CPU_TIM, LL_TIM_TRGO_RESET);
+    LL_TIM_SetTriggerOutput2(CPU_TIM, LL_TIM_TRGO2_RESET);
+    LL_TIM_DisableMasterSlaveMode(CPU_TIM);
 
     LL_TIM_SetCounter(CPU_TIM, 0);
-    LL_TIM_EnableIT_UPDATE(TIM1); // 更新中断使能
-    LL_TIM_EnableCounter(TIM1);   // 计数使能
+    LL_TIM_EnableIT_UPDATE(CPU_TIM); // 更新中断使能
+    LL_TIM_EnableCounter(CPU_TIM);   // 计数使能
 
     // 微秒定时器初始化
     /* Peripheral clock enable */
@@ -85,19 +85,19 @@ void HDL_CPU_Time_Init()
     TIM_InitStruct.Autoreload        = 0xFFFFFFFFUL;
     TIM_InitStruct.ClockDivision     = LL_TIM_CLOCKDIVISION_DIV1;
     TIM_InitStruct.RepetitionCounter = 0;
-    LL_TIM_Init(TIM2, &TIM_InitStruct);
-    LL_TIM_DisableARRPreload(TIM2);
-    LL_TIM_SetClockSource(TIM2, LL_TIM_CLOCKSOURCE_INTERNAL);
-    LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
-    LL_TIM_DisableMasterSlaveMode(TIM2);
+    LL_TIM_Init(CPU_US_TIM, &TIM_InitStruct);
+    LL_TIM_DisableARRPreload(CPU_US_TIM);
+    LL_TIM_SetClockSource(CPU_US_TIM, LL_TIM_CLOCKSOURCE_INTERNAL);
+    LL_TIM_SetTriggerOutput(CPU_US_TIM, LL_TIM_TRGO_RESET);
+    LL_TIM_DisableMasterSlaveMode(CPU_US_TIM);
 
-    LL_TIM_SetCounter(TIM2, 0);
-    LL_TIM_DisableIT_UPDATE(TIM2);
+    LL_TIM_SetCounter(CPU_US_TIM, 0);
+    LL_TIM_DisableIT_UPDATE(CPU_US_TIM);
 
     NVIC_SetPriority(TIM2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 15, 0));
     NVIC_EnableIRQ(TIM2_IRQn);
 
-    LL_TIM_EnableCounter(TIM2); // 计数使能
+    LL_TIM_EnableCounter(CPU_US_TIM); // 计数使能
 
     cpu_time_init_flag = true;
 }

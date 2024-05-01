@@ -17,7 +17,7 @@
 #include "log.h"
 
 #include <string.h>
-#include "mtime.h"
+#include "datetime.h"
 #include "HDL_Uart.h"
 #include "HDL_RTC.h"
 #include "BFL_LED.h"
@@ -36,6 +36,7 @@
 
 #include "./sdcard/bsp_spi_sdcard.h"
 #include "./sdcard/sdcard_test.h"
+#include "app_fatfs.h"
 
 typedef struct tagSysInfo_t {
     uint32_t devid;
@@ -100,7 +101,50 @@ uint8_t Sensor_Queue_Read(RTU_Sampling_Var_t *var)
     return cqueue_dequeue(&Sensor_Queue, var);
 }
 
-void FatFs_Init();
+void fatfs_rw_test1()
+{
+    FRESULT g_res;
+
+    uint8_t w_buf[]    = "AAAAAAAAAAAAAAAA";
+    uint8_t r_buf[200] = {0};
+    UINT w_buf_len     = 0;
+    UINT r_buf_len     = 0;
+    g_res              = f_open(&USERFile1, "1:data.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+    if (g_res != FR_OK) {
+        ULOG_INFO("[FatFs] open 2020.txt failed err code = %d", g_res);
+    } else {
+        ULOG_INFO("[FatFs] open 2020.txt  ok");
+    }
+    g_res = f_write(&USERFile1, w_buf, sizeof(w_buf), &w_buf_len);
+    if (g_res != FR_OK) {
+        ULOG_INFO("[FatFs] write 2020.txt failed  err code = %d", g_res);
+    } else {
+        ULOG_INFO("[FatFs] write 2020.txt  ok   w_buf_len = %d", w_buf_len);
+        f_lseek(&USERFile1, 0);
+        g_res = f_read(&USERFile1, r_buf, f_size(&USERFile1), &r_buf_len);
+        if (g_res != FR_OK) {
+            ULOG_INFO("[FatFs] read 2020.txt failed g_res = %d", g_res);
+        } else {
+            ULOG_INFO("[FatFs] read 2020.txt  ok   r_buf_len = %d", r_buf_len);
+        }
+    }
+    f_close(&USERFile1);
+}
+
+// 检查文件是否可写
+int is_file_writable(const char *filename)
+{
+    FILINFO finfo;
+    FRESULT res = f_stat(filename, &finfo);
+    if (res == FR_OK && !(finfo.fattrib & AM_RDO)) {
+        // 文件存在且可写
+        return 1;
+    } else {
+        // 文件不存在或不可写
+        return 0;
+    }
+}
+
 /**
  * @brief 光伏RTU主程序处理器。
  *
@@ -124,10 +168,10 @@ void APP_Main()
     sc_byte_buffer _4G_rev_buffer;
     sc_byte_buffer_init(&_4G_rev_buffer, _4G_rev_buf, sizeof(_4G_rev_buf));
 
-    HDL_RTC_Init();
     // HDL_ADC_Init();
     // HDL_ADC_Enable(); // 使能
     // HDL_WATCHDOG_Init(20);
+    datetime_init();
     ulog_init_user();
     BFL_LED_Init();
 
@@ -182,6 +226,20 @@ void APP_Main()
 
     uint32_t last_recv_time = 0;
     PeriodREC_t s_tims1;
+    PeriodREC_t s_tims2;
+    uint32_t sd_write_times = 0;
+    FRESULT res;
+    UINT w_buf_len       = 0;
+    UINT r_buf_len       = 0;
+    const char *filePath = "1:data.txt";
+
+    res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+    if (res != FR_OK) {
+        ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
+    } else {
+        ULOG_INFO("[FatFs] open %s  ok", filePath);
+    }
+
     while (1) {
         uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
         if (dwLen > 0) {
@@ -201,10 +259,29 @@ void APP_Main()
             //      }
         }
 
+        uint8_t sd_change = SD_CD_Has_Change();
+        if (sd_change == 2) {
+            ULOG_INFO("[SD Card] SD Card is removed");
+            SD_Card_FatFs_DeInit();
+        } else if (sd_change == 1) {
+            ULOG_INFO("[SD Card] SD Card is inserted");
+            SD_Card_FatFs_Init();
+        }
+
         if (((HDL_CPU_Time_GetTick() - last_recv_time) > 2 && sc_byte_buffer_size(&_4G_rev_buffer) > 0) ||
             sc_byte_buffer_size(&_4G_rev_buffer) > 512) {
 
             BFL_4G_TCP_Write(SOCKET0, (uint8_t *)sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer));
+
+            // 在每次准备写入数据之前检查文件是否可写
+            res = f_write(&USERFile1, sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer), &w_buf_len);
+            if (res != FR_OK) {
+                ULOG_ERROR("[FatFs] write %s failed  err code = %d", filePath, res);
+            } else {
+                ULOG_INFO("[FatFs] write %s  ok", filePath);
+            }
+
+            sd_write_times++;
 
             sc_byte_buffer_clear(&_4G_rev_buffer);
         }
@@ -213,51 +290,75 @@ void APP_Main()
             BFL_LED_Toggle(LED1);
         }
 
-        //    if (BFL_4G_TCP_Writeable(0) && Sensor_Queue_Read(&var))
-        //    {
-        //      // 存放数据到RTU数据包中(存放数据到RTU数据包的数据域)
-        //      switch (pushed_sample_var_num)
-        //      {
-        //      case 0:
-        //      {
-        //        // 存放RTU设备代号
-        //        uint64_t rtu_devid = AppMainGetDevID();
-        //        // 编码采样点的时间和校验和
-        //        RTU_Sampling_Var_encoder(&vqr_header, SENSOR_CODE_DEVICE_ID, &rtu_devid, sizeof(uint64_t));
+        if (period_query_user(&s_tims2, 2000)) {
+            if (sd_write_times > 0) {
+                sd_write_times = 0;
 
-        //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &vqr_header);
-        //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-        //        pushed_sample_var_num += 2;
-        //      }
-        //      break;
-        //      case 22 - 1: // n - 1，包含中心标识采样点一个n个采样点
-        //      {
-        //        pushed_sample_var_num = 0;
-        //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-        //        // 编码位字节流
-        //        BFL_RTU_Packet_encoder(&pkg);
-        //        // 发送字节流
-        //        BFL_RTU_Packet_send_by_4G(&pkg, 1);
-        //        // 每次使用完成后清空，防止上一次的数据带来的影响
-        //        BFL_RTU_Packet_clear_buffer(&pkg);
-        //      }
-        //      break;
-        //      default:
-        //      {
-        //        // 这里最好自己预先确定有多少数据需要存放到数据域
-        //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
-        //        pushed_sample_var_num++;
-        //      }
-        //      break;
-        //      }
-        //    }
+                // 关闭文件
+                f_close(&USERFile1);
+                // 重新打开文件
+                res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+                if (res != FR_OK) {
+                    ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
+                } else {
+                    ULOG_INFO("[FatFs] open %s  ok", filePath);
+                }
+            }
+            f_close(&USERFile1);
 
-        BFL_4G_Poll();
-
-        if (BFL_4G_TCP_Readable(SOCKET0)) {
-            uint32_t len = BFL_4G_TCP_Read(SOCKET0, (uint8_t *)buf, 80);
-            buf[len]     = '\0';
-            ULOG_INFO("Read:%s", buf);
+            res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+            if (res != FR_OK) {
+                ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
+            } else {
+                ULOG_INFO("[FatFs] open %s  ok", filePath);
+            }
         }
+    }
+
+    //    if (BFL_4G_TCP_Writeable(0) && Sensor_Queue_Read(&var))
+    //    {
+    //      // 存放数据到RTU数据包中(存放数据到RTU数据包的数据域)
+    //      switch (pushed_sample_var_num)
+    //      {
+    //      case 0:
+    //      {
+    //        // 存放RTU设备代号
+    //        uint64_t rtu_devid = AppMainGetDevID();
+    //        // 编码采样点的时间和校验和
+    //        RTU_Sampling_Var_encoder(&vqr_header, SENSOR_CODE_DEVICE_ID, &rtu_devid, sizeof(uint64_t));
+
+    //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &vqr_header);
+    //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+    //        pushed_sample_var_num += 2;
+    //      }
+    //      break;
+    //      case 22 - 1: // n - 1，包含中心标识采样点一个n个采样点
+    //      {
+    //        pushed_sample_var_num = 0;
+    //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+    //        // 编码位字节流
+    //        BFL_RTU_Packet_encoder(&pkg);
+    //        // 发送字节流
+    //        BFL_RTU_Packet_send_by_4G(&pkg, 1);
+    //        // 每次使用完成后清空，防止上一次的数据带来的影响
+    //        BFL_RTU_Packet_clear_buffer(&pkg);
+    //      }
+    //      break;
+    //      default:
+    //      {
+    //        // 这里最好自己预先确定有多少数据需要存放到数据域
+    //        BFL_RTU_Packet_push_Sampling_Var(&pkg, &var);
+    //        pushed_sample_var_num++;
+    //      }
+    //      break;
+    //      }
+    //    }
+
+    // BFL_4G_Poll();
+
+    if (BFL_4G_TCP_Readable(SOCKET0)) {
+        uint32_t len = BFL_4G_TCP_Read(SOCKET0, (uint8_t *)buf, 80);
+        buf[len]     = '\0';
+        ULOG_INFO("Read:%s", buf);
     }
 }

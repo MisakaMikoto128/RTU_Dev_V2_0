@@ -23,23 +23,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "CHIP_W25Q512_QueueFileSystem.h"
-#include "scheduler.h"
+#include "datetime.h"
 #include "log.h"
-#include "test.h"
 #include <string.h>
 #include "mtime.h"
-#include "HDL_Uart.h"
-#include "HDL_RTC.h"
-#include "BFL_LED.h"
-#include "HDL_IWDG.h"
-#include "HDL_ADC.h"
 #include <math.h>
 #include <stdlib.h>
-
-#include "main.h"
-#include "queue.h"
-#include "HDL_Flash.h"
 #include "crc.h"
 
 /* USER CODE END Includes */
@@ -65,8 +54,11 @@ typedef enum {
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-FATFS USERFatFs;  /* File system object for USER logical drive */
-FIL USERFile;     /* File  object for USER */
+static FATFS fs; /* File system object for USER logical drive */
+static FATFS fs_sd;
+static uint8_t work_buff[_MAX_SS];
+FIL USERFile1;    /* File  object for USER */
+FIL USERFile2;    /* File  object for USER */
 char USERPath[4]; /* USER logical drive path */
 /* USER CODE BEGIN PV */
 FS_FileOperationsTypeDef Appli_state = APPLICATION_IDLE;
@@ -120,7 +112,7 @@ DWORD get_fattime(void)
 {
     /* USER CODE BEGIN get_fattime */
     mtime_t datetime;
-    HDL_RTC_GetStructTime(&datetime);
+    datetime_get_localtime(&datetime);
 
     DWORD fat_time = 0;
     fat_time |= ((DWORD)datetime.nYear - 1980) << 25;
@@ -135,10 +127,6 @@ DWORD get_fattime(void)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN Application */
-static FATFS fs;
-static FATFS fs_sd;
-static void *buff[2048];
-static FIL file;
 
 void fatfs_register()
 {
@@ -146,7 +134,7 @@ void fatfs_register()
     g_res = f_mount(&fs, "0:", 1);
     if (g_res == FR_NO_FILESYSTEM) {
         ULOG_INFO("[FatFs] No file systems.");
-        g_res = f_mkfs("0:", FM_ANY, 0, buff, sizeof(buff));
+        g_res = f_mkfs("0:", FM_ANY, 0, work_buff, sizeof(work_buff));
         f_mount(&fs, "0:", 1);
         if (g_res != FR_OK)
             ULOG_INFO("[FatFs] mkfs_failed err code = %d", g_res);
@@ -178,44 +166,44 @@ void fatfs_rw_test()
     uint8_t r_buf[200] = {0};
     UINT w_buf_len     = 0;
     UINT r_buf_len     = 0;
-    g_res              = f_open(&file, "0:2020.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+    g_res              = f_open(&USERFile1, "0:2020.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
     if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] open 2020.txt failed err code = %d", g_res);
     } else {
         ULOG_INFO("[FatFs] open 2020.txt  ok");
     }
-    g_res = f_write(&file, w_buf, sizeof(w_buf), &w_buf_len);
+    g_res = f_write(&USERFile1, w_buf, sizeof(w_buf), &w_buf_len);
     if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] write 2020.txt failed  err code = %d", g_res);
     } else {
         ULOG_INFO("[FatFs] write 2020.txt  ok   w_buf_len = %d", w_buf_len);
-        f_lseek(&file, 0);
-        g_res = f_read(&file, r_buf, f_size(&file), &r_buf_len);
+        f_lseek(&USERFile1, 0);
+        g_res = f_read(&USERFile1, r_buf, f_size(&USERFile1), &r_buf_len);
         if (g_res != FR_OK) {
             ULOG_INFO("[FatFs] read 2020.txt failed g_res = %d", g_res);
         } else {
             ULOG_INFO("[FatFs] read 2020.txt  ok   r_buf_len = %d", r_buf_len);
         }
     }
-    f_close(&file);
+    f_close(&USERFile1);
 
     // 打开文件输出文件内容
-    g_res = f_open(&file, "0:2020.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+    g_res = f_open(&USERFile1, "0:2020.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
     if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] open 2020.txt failed err code = %d", g_res);
     } else {
         ULOG_INFO("[FatFs] open 2020.txt  ok");
     }
 
-    f_lseek(&file, 0);
-    g_res = f_read(&file, r_buf, f_size(&file), &r_buf_len);
+    f_lseek(&USERFile1, 0);
+    g_res = f_read(&USERFile1, r_buf, f_size(&USERFile1), &r_buf_len);
     if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] read 2020.txt failed g_res = %d", g_res);
     } else {
         ULOG_INFO("[FatFs] read 2020.txt  ok   r_buf_len = %d", r_buf_len);
         ULOG_INFO("[FatFs] read 2020.txt  ok   r_buf = %s", r_buf);
     }
-    f_close(&file);
+    f_close(&USERFile1);
 }
 
 #include "ymodem.h"
@@ -282,7 +270,7 @@ void SD_Card_FatFs_Init()
     g_res = f_mount(&fs_sd, "1:", 1);
     if (g_res == FR_NO_FILESYSTEM) {
         ULOG_INFO("[FatFs] No file systems.");
-        g_res = f_mkfs("1:", FM_ANY, 0, buff, sizeof(buff));
+        g_res = f_mkfs("1:", FM_ANY, 0, work_buff, sizeof(work_buff));
         f_mount(&fs_sd, "1:", 1);
         if (g_res != FR_OK)
             ULOG_INFO("[FatFs] mkfs_failed err code = %d", g_res);
@@ -293,6 +281,18 @@ void SD_Card_FatFs_Init()
     } else {
         ULOG_INFO("[FatFs] flash have file systems");
     }
+}
+
+void SD_Card_FatFs_DeInit()
+{
+    FRESULT g_res;
+    g_res = f_mount(NULL, "1:", 1);
+    if (g_res != FR_OK) {
+        ULOG_INFO("[FatFs] file systems unregister failed err code = %d", g_res);
+    } else {
+        ULOG_INFO("[FatFs] file systems unregister ok");
+    }
+    FATFS_UnLinkDriver(USERPath);
 }
 
 void FatFs_Init()
@@ -332,7 +332,7 @@ void FatFs_Init()
 
     if (fatfs_is_file_exist("0:test.txt")) {
         // Open file and read it contents
-        FIL *pFile = &file;
+        FIL *pFile = &USERFile1;
         FRESULT res;
         UINT br;
         char rtext[100];

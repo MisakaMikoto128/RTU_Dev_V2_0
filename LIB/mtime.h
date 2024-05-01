@@ -41,13 +41,22 @@ typedef struct
  * @return uint8_t 0 = Sunday
  */
 uint8_t mtime_get_week(uint16_t year, uint8_t month, uint8_t day);
-void mtime_utc_sec_2_time(unsigned int utc_sec, mtime_t *result); // 根据UTC时间戳得到对应的日期
-unsigned int mtime_2_utc_sec(mtime_t *currTime);                  // 根据时间计算出UTC时间戳
-char *mtime_format(unsigned int utc_sec, char *pBuf);             // 根据UTC时间戳得到对应的日期字符串
+void mtime_unix_sec_2_time(unsigned int utc_sec, mtime_t *result); // 根据UTC时间戳得到对应的日期
+unsigned int mtime_2_unix_sec(mtime_t *currTime);                  // 根据时间计算出UTC时间戳
+char *mtime_format(unsigned int utc_sec, char *pBuf);              // 根据UTC时间戳得到对应的日期字符串
 
 void mtime_add_hours(mtime_t *currTime, unsigned int hours);
 void mtime_sub_hours(mtime_t *currTime, unsigned int hours);
 uint8_t mtime_is_equal(mtime_t *currTime, mtime_t *targetTime);
+
+#define SECOND_TO_MS(x) ((x) * 1000ull)
+#define MINUTE_TO_MS(x) ((x) * 60ull * 1000ull)
+#define HOUR_TO_MS(x) ((x) * 60ull * 60ull * 1000ull)
+#define DAY_TO_MS(x) ((x) * 24ull * 60ull * 60ull * 1000ull)
+
+#define MINUTE_TO_SEC(x) ((x) * 60ull)
+#define SEC(x) ((x) * 1ull)
+#define MS(x) ((x) * 1ull)
 
 #ifdef __cplusplus
 }

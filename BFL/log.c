@@ -49,7 +49,7 @@ void my_com_logger(ulog_level_t severity, char *msg)
     mtime_t mtime;
     uint64_t timestamp = HDL_RTC_GetTimeTick(&mtime.wSub);
     timestamp += 8 * 3600;
-    mtime_utc_sec_2_time(timestamp, &mtime);
+    mtime_unix_sec_2_time(timestamp, &mtime);
     Debug_Printf("%04d.%02d.%02d %02d:%02d:%02d [%s]: %s\n",
                  mtime.nYear, mtime.nMonth, mtime.nDay, mtime.nHour, mtime.nMin, mtime.nSec,
                  ulog_level_name(severity),
@@ -68,7 +68,7 @@ void my_console_logger(ulog_level_t severity, char *msg)
     mtime_t mtime;
     uint64_t timestamp = HDL_RTC_GetTimeTick(&mtime.wSub);
     timestamp += 8 * 3600;
-    mtime_utc_sec_2_time(timestamp, &mtime);
+    mtime_unix_sec_2_time(timestamp, &mtime);
     SEGGER_RTT_printf(0, "%04d.%02d.%02d %02d:%02d:%02d  [%s]: %s\n",
                       mtime.nYear, mtime.nMonth, mtime.nDay, mtime.nHour, mtime.nMin, mtime.nSec,
                       ulog_level_name(severity),
