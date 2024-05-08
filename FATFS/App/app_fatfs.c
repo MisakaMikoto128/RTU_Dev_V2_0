@@ -135,11 +135,15 @@ void fatfs_register()
     if (g_res == FR_NO_FILESYSTEM) {
         ULOG_INFO("[FatFs] No file systems.");
         g_res = f_mkfs("0:", FM_ANY, 0, work_buff, sizeof(work_buff));
-        f_mount(&fs, "0:", 1);
-        if (g_res != FR_OK)
-            ULOG_INFO("[FatFs] mkfs_failed err code = %d", g_res);
-        else
-            ULOG_INFO("[FatFs] init file systems ok");
+        if (g_res == FR_OK) {
+            ULOG_INFO("[FatFs] f_mkfs ok");
+            /* 格式化后，先取消挂载 */
+            f_mount(NULL, "1:", 1);
+            /* 重新挂载 */
+            f_mount(&fs_sd, "1:", 1);
+        } else {
+            ULOG_INFO("[FatFs] f_mkfs failed err code = %d", g_res);
+        }
     } else if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] f_mount failed err code = %d", g_res);
     } else {
@@ -255,6 +259,13 @@ void W25Q512_Flash_FatFs_Init()
     fatfs_register();
 }
 
+void SD_Test();
+bool sd_card_is_mounted = false;
+bool SD_Card_Fs_IsMounted()
+{
+    return sd_card_is_mounted;
+}
+
 void SD_Card_FatFs_Init()
 {
     if (FATFS_LinkDriverEx(&USER_Driver, USERPath, 1) != 0)
@@ -270,16 +281,44 @@ void SD_Card_FatFs_Init()
     g_res = f_mount(&fs_sd, "1:", 1);
     if (g_res == FR_NO_FILESYSTEM) {
         ULOG_INFO("[FatFs] No file systems.");
-        g_res = f_mkfs("1:", FM_ANY, 0, work_buff, sizeof(work_buff));
-        f_mount(&fs_sd, "1:", 1);
-        if (g_res != FR_OK)
-            ULOG_INFO("[FatFs] mkfs_failed err code = %d", g_res);
-        else
-            ULOG_INFO("[FatFs] init file systems ok");
+        FRESULT res = f_mkfs("1:", FM_ANY, 0, work_buff, sizeof(work_buff));
+        if (res == FR_OK) {
+            ULOG_INFO("[FatFs] f_mkfs ok");
+            /* 重新挂载 */
+            g_res = f_mount(&fs_sd, "1:", 1);
+            sd_card_is_mounted = true;
+        } else {
+            ULOG_INFO("[FatFs] f_mkfs failed err code = %d", g_res);
+        }
     } else if (g_res != FR_OK) {
         ULOG_INFO("[FatFs] f_mount failed err code = %d", g_res);
     } else {
         ULOG_INFO("[FatFs] flash have file systems");
+        sd_card_is_mounted = true;
+        // 打印文件系统信息
+        FATFS *fs;
+        DWORD fre_clust, fre_sect, tot_sect;
+        uint64_t fre_space, tot_space;
+
+        f_getfree("1:", &fre_clust, &fs);
+        /* Get total sectors and free sectors */
+        tot_sect  = (fs->n_fatent - 2) * fs->csize;
+        fre_sect  = fre_clust * fs->csize;
+        fre_space = (uint64_t)fre_sect * fs->ssize;
+        tot_space = (uint64_t)tot_sect * fs->ssize;
+        ULOG_INFO("[FatFs] SD Card file system information:");
+        ULOG_INFO("[FatFs] Total sectors: %u", tot_sect);
+        ULOG_INFO("[FatFs] Free sectors: %u", fre_sect);
+        ULOG_INFO("[FatFs] Sector size: %u", fs->ssize);
+        ULOG_INFO("[FatFs] Cluster size: %u byte", fs->csize * fs->ssize);
+        /* Print the free space (assuming 512 bytes/sector) */
+        ULOG_INFO("[FatFs] SD Card free space: %.2f GB", fre_space / (1024 * 1024 * 1024.0f));
+        /* Print the total space (assuming 512 bytes/sector) */
+        ULOG_INFO("[FatFs] SD Card total space: %.2f GB", tot_space / (1024 * 1024 * 1024.0f));
+        /* Print disk format */
+        ULOG_INFO("[FatFs] SD Card format: %s", fs->fs_type == FS_FAT12 ? "FAT12" : fs->fs_type == FS_FAT16 ? "FAT16"
+                                                                                : fs->fs_type == FS_FAT32   ? "FAT32"
+                                                                                                           : "Unknown");
     }
 }
 
@@ -293,6 +332,7 @@ void SD_Card_FatFs_DeInit()
         ULOG_INFO("[FatFs] file systems unregister ok");
     }
     FATFS_UnLinkDriver(USERPath);
+    sd_card_is_mounted = false;
 }
 
 void FatFs_Init()

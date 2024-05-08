@@ -28,7 +28,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -67,4 +67,5 @@ void fatfsTaskStart();
 void FatFs_Init();
 void SD_Card_FatFs_DeInit();
 void SD_Card_FatFs_Init();
+bool SD_Card_Fs_IsMounted();
 #endif /*__APP_FATFS_H */

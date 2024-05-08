@@ -199,7 +199,7 @@ extern SD_CardInfo SDCardInfo; // 用于存储卡的信息
 #define SD_START_DATA_SINGLE_BLOCK_READ    0xFE /*!< Data token start byte, Start Single Block Read */
 #define SD_START_DATA_MULTIPLE_BLOCK_READ  0xFE /*!< Data token start byte, Start Multiple Block Read */
 #define SD_START_DATA_SINGLE_BLOCK_WRITE   0xFE /*!< Data token start byte, Start Single Block Write */
-#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFD /*!< Data token start byte, Start Multiple Block Write */
+#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFC /*!< Data token start byte, Start Multiple Block Write */
 #define SD_STOP_DATA_MULTIPLE_BLOCK_WRITE  0xFD /*!< Data toke stop byte, Stop Multiple Block Write */
 
 /**
@@ -271,7 +271,7 @@ uint16_t SD_GetStatus(void);
 uint8_t SD_WriteByte(uint8_t byte);
 uint8_t SD_ReadByte(void);
 uint8_t SD_CD_Has_Change();
-bool SD_Card_Is_Inited();
+bool SD_Card_Is_IF_Inited();
 #ifdef __cplusplus
 }
 #endif

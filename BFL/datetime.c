@@ -46,16 +46,34 @@ void datetime_set_local_timestamp(uint64_t timestamp)
     uint64_t utc0_timestamp = timestamp - timezone * 3600;
     HDL_RTC_SetTimeTick(utc0_timestamp);
 }
+
+/**
+ * @brief 
+ * 
+ * @return uint64_t local timestamp unit in second
+ */
 uint64_t datetime_get_local_timestamp(void)
 {
     uint64_t utc0_timestamp  = HDL_RTC_GetTimeTick(NULL);
     uint64_t local_timestamp = utc0_timestamp + timezone * 3600;
     return local_timestamp;
 }
-void datetime_set_unix_timestamp(uint64_t timestamp)
+
+/**
+ * @brief 
+ * 
+ * @param timestamp_sec unix timestamp unit in second
+ */
+void datetime_set_unix_timestamp(uint64_t timestamp_sec)
 {
-    HDL_RTC_SetTimeTick(timestamp);
+    HDL_RTC_SetTimeTick(timestamp_sec);
 }
+
+/**
+ * @brief 
+ * 
+ * @return uint64_t the timestamp unit in second
+ */
 uint64_t datetime_get_unix_timestamp(void)
 {
     return HDL_RTC_GetTimeTick(NULL);

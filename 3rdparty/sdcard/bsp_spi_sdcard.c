@@ -53,9 +53,15 @@
 // 记录卡的类型
 uint8_t SD_Type = SD_TYPE_NOT_SD; // 存储卡的类型
 SD_CardInfo SDCardInfo;           // 用于存储卡的信息
-bool g_sd_spi_if_inited    = false;
+bool g_sd_spi_if_inited = false;  // SD卡SPI接口是否初始化
 
-bool SD_Card_Is_Inited()
+/**
+ * @brief SD卡SPI接口是否初始化
+ *
+ * @return true
+ * @return false
+ */
+bool SD_Card_Is_IF_Inited()
 {
     return g_sd_spi_if_inited;
 }
@@ -103,7 +109,7 @@ void LL_EXTI_LINE_11_Callback()
     bool current_level                       = LL_GPIO_IsInputPinSet(SD_DETECT_GPIO_Port, SD_DETECT_Pin);
 
     if (last_level != current_level) {
-        last_level            = current_level;
+        last_level = current_level;
         if (HDL_CPU_Time_GetTick() - last_level_change_moment > 1) {
             g_sd_card_has_changed = true;
         }
@@ -124,6 +130,13 @@ void SD_SPI_IF_Init()
     /*!< Configure SD_SPI_DETECT_PIN pin: SD Card detect pin */
     /**/
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+
+    /**/
+    LL_GPIO_SetPinPull(SD_DETECT_GPIO_Port, SD_DETECT_Pin, LL_GPIO_PULL_UP);
+
+    /**/
+    LL_GPIO_SetPinMode(SD_DETECT_GPIO_Port, SD_DETECT_Pin, LL_GPIO_MODE_INPUT);
+
     /**/
     LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE11);
 
@@ -132,12 +145,6 @@ void SD_SPI_IF_Init()
     EXTI_InitStruct.Mode        = LL_EXTI_MODE_IT;
     EXTI_InitStruct.Trigger     = LL_EXTI_TRIGGER_RISING_FALLING;
     LL_EXTI_Init(&EXTI_InitStruct);
-
-    /**/
-    LL_GPIO_SetPinPull(SD_DETECT_GPIO_Port, SD_DETECT_Pin, LL_GPIO_PULL_UP);
-
-    /**/
-    LL_GPIO_SetPinMode(SD_DETECT_GPIO_Port, SD_DETECT_Pin, LL_GPIO_MODE_INPUT);
 
     /* EXTI interrupt init*/
     NVIC_SetPriority(EXTI15_10_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 15, 0));
@@ -219,6 +226,12 @@ SD_Error SD_Card_Init()
         ULOG_INFO("[SD Card] Card type: %s", SD_TypetoString(SD_Type));
         ULOG_INFO("[SD Card] Card capacity: %.2f GB", SDCardInfo.CardCapacity / 1024 / 1024 / 1024.0f);
         ULOG_INFO("[SD Card] Card block size: %d Bytes", SDCardInfo.CardBlockSize);
+        ULOG_INFO("[SD Card] Card manufacturer ID: %d", SDCardInfo.SD_cid.ManufacturerID);
+        ULOG_INFO("[SD Card] Card product name: %d", SDCardInfo.SD_cid.ProdName1);
+        ULOG_INFO("[SD Card] Card product revision: %d", SDCardInfo.SD_cid.ProdRev);
+        ULOG_INFO("[SD Card] Card serial number: %d", SDCardInfo.SD_cid.ProdSN);
+        ULOG_INFO("[SD Card] Card manufacture date: %d", SDCardInfo.SD_cid.ManufactDate);
+        ULOG_INFO("[SD Card] Card device size: %d", SDCardInfo.SD_csd.DeviceSize);
     }
     return Status;
 }
@@ -370,7 +383,11 @@ SD_Error SD_ReadMultiBlocks(uint8_t *pBuffer, uint64_t ReadAddr, uint16_t BlockS
                 pBuffer++;
             }
             /*!< Set next read address*/
-            Offset += 512;
+            if (SD_Type == SD_TYPE_V2HC) {
+                Offset += BlockSize / 512;
+            } else {
+                Offset += BlockSize;
+            }
             /*!< get CRC bytes (not really needed by us, but required by SD) */
             SD_ReadByte();
             SD_ReadByte();
@@ -415,39 +432,41 @@ SD_Error SD_WriteBlock(uint8_t *pBuffer, uint64_t WriteAddr, uint16_t BlockSize)
 
     /*!< SD chip select low */
     SD_CS_LOW();
+    /*!< Data transfer */
 
-    /*!< Send CMD24 (SD_CMD_WRITE_SINGLE_BLOCK) to write multiple block */
+    /*!< Send CMD24 (SD_CMD_WRITE_SINGLE_BLOCK) to write blocks */
     SD_SendCmd(SD_CMD_WRITE_SINGLE_BLOCK, WriteAddr, 0xFF);
-
     /*!< Check if the SD acknowledged the write block command: R1 response (0x00: no errors) */
-    if (!SD_GetResponse(SD_RESPONSE_NO_ERROR)) {
-        /*!< Send a dummy byte */
-        SD_WriteByte(SD_DUMMY_BYTE);
+    if (SD_GetResponse(SD_RESPONSE_NO_ERROR)) {
+        return SD_RESPONSE_FAILURE;
+    }
+    /*!< Send dummy byte */
+    SD_WriteByte(SD_DUMMY_BYTE);
+    /*!< Send the data token to signify the start of the data */
+    SD_WriteByte(SD_START_DATA_SINGLE_BLOCK_WRITE);
+    /*!< Write the block data to SD : write count data by block */
+    for (i = 0; i < BlockSize; i++) {
+        /*!< Send the pointed byte */
+        SD_WriteByte(*pBuffer);
+        /*!< Point to the next location where the byte read will be saved */
+        pBuffer++;
+    }
 
-        /*!< Send the data token to signify the start of the data */
-        SD_WriteByte(0xFE);
-
-        /*!< Write the block data to SD : write count data by block */
-        for (i = 0; i < BlockSize; i++) {
-            /*!< Send the pointed byte */
-            SD_WriteByte(*pBuffer);
-            /*!< Point to the next location where the byte read will be saved */
-            pBuffer++;
-        }
-        /*!< Put CRC bytes (not really needed by us, but required by SD) */
-        SD_ReadByte();
-        SD_ReadByte();
-
-        /*!< Read data response */
-        if (SD_GetDataResponse() == SD_DATA_OK) {
-            rvalue = SD_RESPONSE_NO_ERROR;
-        }
+    /*!< Put CRC bytes (not really needed by us, but required by SD) */
+    SD_ReadByte();
+    SD_ReadByte();
+    /*!< Read data response */
+    if (SD_GetDataResponse() == SD_DATA_OK) {
+        /*!< Set response value to success */
+        rvalue = SD_RESPONSE_NO_ERROR;
+    } else {
+        /*!< Set response value to failure */
+        rvalue = SD_RESPONSE_FAILURE;
     }
     /*!< SD chip select high */
     SD_CS_HIGH();
     /*!< Send dummy byte: 8 Clock pulses of delay */
     SD_WriteByte(SD_DUMMY_BYTE);
-
     /*!< Returns the reponse */
     return rvalue;
 }
@@ -485,7 +504,7 @@ SD_Error SD_WriteMultiBlocks(uint8_t *pBuffer, uint64_t WriteAddr, uint16_t Bloc
             return SD_RESPONSE_FAILURE;
         }
         /*!< Send dummy byte */
-        SD_WriteByte(SD_DUMMY_BYTE);
+        // SD_WriteByte(SD_DUMMY_BYTE);
         /*!< Send the data token to signify the start of the data */
         SD_WriteByte(SD_START_DATA_SINGLE_BLOCK_WRITE);
         /*!< Write the block data to SD : write count data by block */
@@ -496,7 +515,11 @@ SD_Error SD_WriteMultiBlocks(uint8_t *pBuffer, uint64_t WriteAddr, uint16_t Bloc
             pBuffer++;
         }
         /*!< Set next write address */
-        Offset += 512;
+        if (SD_Type == SD_TYPE_V2HC) {
+            Offset += BlockSize / 512;
+        } else {
+            Offset += BlockSize;
+        }
         /*!< Put CRC bytes (not really needed by us, but required by SD) */
         SD_ReadByte();
         SD_ReadByte();

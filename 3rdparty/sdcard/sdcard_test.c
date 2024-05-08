@@ -101,7 +101,7 @@ void SD_MultiBlockTest(void)
 {
     /*--------------- Multiple Block Read/Write ---------------------*/
     /* Fill the buffer to send */
-    Fill_Buffer(Buffer_MultiBlock_Tx, MULTI_BUFFER_SIZE, 0x0);
+    Fill_Buffer(Buffer_MultiBlock_Tx, MULTI_BUFFER_SIZE, 0x00);
 
     if (Status == SD_RESPONSE_NO_ERROR) {
         /* Write multiple block of many bytes on address 0 */

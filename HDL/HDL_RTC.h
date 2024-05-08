@@ -23,6 +23,7 @@ void HDL_RTC_GetStructTime(mtime_t *pmtime);
 void HDL_RTC_SetTimeTick(uint64_t timestamp);
 void HDL_RTC_SetStructTime(mtime_t *pmtime);
 bool HDL_RTC_HasSynced();
+void HDL_RTC_SetSynced();
 
 // 亚秒寄存器，部分MCU具有该寄存器
 #if HDL_RTC_CLOCK_SOURCE_LSI == 0

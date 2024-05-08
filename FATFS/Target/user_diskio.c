@@ -128,7 +128,7 @@ DSTATUS USER_status(
         case ATA: /* SD CARD */
             if (SD_Detect() == SD_NOT_PRESENT) {
                 status = STA_NODISK;
-            } else if (SD_Card_Is_Inited() == false) {
+            } else if (SD_Card_Is_IF_Inited() == false) {
                 status = STA_NOINIT;
             }
             break;
@@ -167,8 +167,10 @@ DRESULT USER_read(
             SD_state = SD_ReadMultiBlocks(buff, (uint64_t)sector * SD_BLOCKSIZE, SD_BLOCKSIZE, count);
             if (SD_state != SD_RESPONSE_NO_ERROR) {
                 status = RES_ERROR;
+                ULOG_INFO("SD Read Error sector %d, count %d", sector, count);
             } else {
                 status = RES_OK;
+                ULOG_INFO("SD read sector %d, count %d", sector, count);
             }
             break;
         case SPI_FLASH: /* SPI Flash */
@@ -212,11 +214,15 @@ DRESULT USER_write(
     }
     switch (pdrv) {
         case ATA: /* SD CARD */
+
             SD_state = SD_WriteMultiBlocks((uint8_t *)buff, (uint64_t)sector * SD_BLOCKSIZE, SD_BLOCKSIZE, count);
             if (SD_state == SD_RESPONSE_NO_ERROR) {
                 status = RES_OK;
+                ULOG_INFO("[FatFS] SD write sector %d, count %d", sector, count);
+            } else {
+                ULOG_INFO("SD Write Error sector %d, count %d", sector, count);
+                status = RES_ERROR;
             }
-            ULOG_INFO("[FatFS] SD write sector %d, count %d", sector, count);
             break;
 
         case SPI_FLASH:

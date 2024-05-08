@@ -141,9 +141,9 @@ uint64_t HDL_RTC_GetTimeTick(uint16_t *pSub)
 /**
  * @brief 获取mtime_t类型的时间。
  *
- * @param myTime
+ * @param mTime
  */
-void HDL_RTC_GetStructTime(mtime_t *myTime)
+void HDL_RTC_GetStructTime(mtime_t *mTime)
 {
     // using volatile to avoid optimizing local variables
     __IO uint32_t TR; /*!< RTC time register,                                         Address offset: 0x00 */
@@ -156,15 +156,15 @@ void HDL_RTC_GetStructTime(mtime_t *myTime)
     TR = (uint32_t)(READ_REG(RTC->TR) & RTC_TR_RESERVED_MASK);
     DR = (uint32_t)(READ_REG(RTC->DR) & RTC_DR_RESERVED_MASK);
 
-    myTime->nHour = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_HT | RTC_TR_HU)) >> RTC_TR_HU_Pos));
-    myTime->nMin  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_MNT | RTC_TR_MNU)) >> RTC_TR_MNU_Pos));
-    myTime->nSec  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_ST | RTC_TR_SU)) >> RTC_TR_SU_Pos));
+    mTime->nHour = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_HT | RTC_TR_HU)) >> RTC_TR_HU_Pos));
+    mTime->nMin  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_MNT | RTC_TR_MNU)) >> RTC_TR_MNU_Pos));
+    mTime->nSec  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((TR & (RTC_TR_ST | RTC_TR_SU)) >> RTC_TR_SU_Pos));
 
-    myTime->wSub = RTC_SUBSEC_MAX - SSR;
+    mTime->wSub = RTC_SUBSEC_MAX - SSR;
 
-    myTime->nYear  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_YT | RTC_DR_YU)) >> RTC_DR_YU_Pos)) + RTC_BASE_YEAR;
-    myTime->nMonth = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_MT | RTC_DR_MU)) >> RTC_DR_MU_Pos));
-    myTime->nDay   = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_DT | RTC_DR_DU)) >> RTC_DR_DU_Pos));
+    mTime->nYear  = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_YT | RTC_DR_YU)) >> RTC_DR_YU_Pos)) + RTC_BASE_YEAR;
+    mTime->nMonth = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_MT | RTC_DR_MU)) >> RTC_DR_MU_Pos));
+    mTime->nDay   = __LL_RTC_CONVERT_BCD2BIN((uint8_t)((DR & (RTC_DR_DT | RTC_DR_DU)) >> RTC_DR_DU_Pos));
 }
 
 /**
@@ -184,25 +184,25 @@ void HDL_RTC_SetTimeTick(uint64_t timestamp)
  * @brief 使用mtime_t对象来设置时间。被设置的时间必须大于等于RTC_BASE_YEAR
  * 否则没有效果。设置时间的时间精度为秒。
  *
- * @param myTime
+ * @param mTime
  */
-void HDL_RTC_SetStructTime(mtime_t *myTime)
+void HDL_RTC_SetStructTime(mtime_t *mTime)
 {
     LL_RTC_TimeTypeDef RTC_TimeStruct = {0};
     LL_RTC_DateTypeDef RTC_DateStruct = {0};
 
-    RTC_TimeStruct.Hours   = myTime->nHour;
-    RTC_TimeStruct.Minutes = myTime->nMin;
-    RTC_TimeStruct.Seconds = myTime->nSec;
+    RTC_TimeStruct.Hours   = mTime->nHour;
+    RTC_TimeStruct.Minutes = mTime->nMin;
+    RTC_TimeStruct.Seconds = mTime->nSec;
 
     LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_TimeStruct);
-    RTC_DateStruct.Month   = myTime->nMonth;
-    RTC_DateStruct.Day     = myTime->nDay;
-    RTC_DateStruct.Year    = myTime->nYear - RTC_BASE_YEAR;
-    RTC_DateStruct.WeekDay = mtime_get_week(myTime->nYear, myTime->nMonth, myTime->nDay);
+    RTC_DateStruct.Month   = mTime->nMonth;
+    RTC_DateStruct.Day     = mTime->nDay;
+    RTC_DateStruct.Year    = mTime->nYear - RTC_BASE_YEAR;
+    RTC_DateStruct.WeekDay = mtime_get_week(mTime->nYear, mTime->nMonth, mTime->nDay);
 
     LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_DateStruct);
-    pSoftRTC->calibratedAtLeastOnce = true;
+    HDL_RTC_SetSynced();
 }
 
 uint64_t HDL_RTC_GetMsTimestamp()
@@ -218,4 +218,9 @@ uint64_t HDL_RTC_GetMsTimestamp()
 bool HDL_RTC_HasSynced()
 {
     return pSoftRTC->calibratedAtLeastOnce;
+}
+
+void HDL_RTC_SetSynced()
+{
+    pSoftRTC->calibratedAtLeastOnce = true;
 }
