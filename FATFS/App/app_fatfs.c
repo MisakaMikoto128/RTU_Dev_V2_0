@@ -138,9 +138,9 @@ void fatfs_register()
         if (g_res == FR_OK) {
             ULOG_INFO("[FatFs] f_mkfs ok");
             /* 格式化后，先取消挂载 */
-            f_mount(NULL, "1:", 1);
+            f_mount(NULL, "0:", 1);
             /* 重新挂载 */
-            f_mount(&fs_sd, "1:", 1);
+            f_mount(&fs_sd, "0:", 1);
         } else {
             ULOG_INFO("[FatFs] f_mkfs failed err code = %d", g_res);
         }
@@ -265,9 +265,41 @@ bool SD_Card_Fs_IsMounted()
 {
     return sd_card_is_mounted;
 }
+void SD_PEN_Enable()
+{
+    LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_1);
+}
+
+void SD_PEN_Disable()
+{
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_1);
+}
+
+void SD_Power_Reset()
+{
+    SD_PEN_Disable();
+    HDL_CPU_Time_DelayMs(80);
+    SD_PEN_Enable();
+    HDL_CPU_Time_DelayMs(80);
+}
+
+void SD_PEN_Init()
+{
+    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA); // A
+    GPIO_InitStruct.Pin        = LL_GPIO_PIN_1;
+    GPIO_InitStruct.Mode       = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+    GPIO_InitStruct.Pull       = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    SD_PEN_Disable();
+}
 
 void SD_Card_FatFs_Init()
 {
+    SD_PEN_Init();
+    SD_Power_Reset();
     if (FATFS_LinkDriverEx(&USER_Driver, USERPath, 1) != 0)
     /* USER CODE BEGIN FATFS_Init */
     {
