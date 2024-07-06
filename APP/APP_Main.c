@@ -57,7 +57,8 @@ Sys_t sys = {0};
 
 static uint8_t rtu_packet_buf[1024 * 2] = {0};
 static uint8_t aBuf[1500];
-static uint8_t _4G_rev_buf[200];
+static uint8_t _4G_rev_buf[1500];
+static uint8_t RxBuf[1200];
 
 #define RS485_3_DIR_PIN           GPIO_PIN_10
 #define RS485_3_DIR_Port          GPIOD
@@ -65,6 +66,11 @@ static uint8_t _4G_rev_buf[200];
 void releaseModbus1()
 {
     LL_GPIO_SetOutputPin(RS485_3_DIR_Port, RS485_3_DIR_PIN);
+}
+
+void takeModbus1()
+{
+    LL_GPIO_ResetOutputPin(RS485_3_DIR_Port, RS485_3_DIR_PIN);
 }
 
 #include <stdlib.h>
@@ -140,6 +146,7 @@ void APP_Main()
     // App初始化
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);
+    Uart_SetWriteOverCallback(COM3, releaseModbus1, NULL);
     LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
     RS485_3_DIR_Port_CLK_EN();
     releaseModbus1();
@@ -154,7 +161,7 @@ void APP_Main()
     releaseModbus1();
 
     BFL_4G_Init("IP", "CMIOT");
-    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 36335);
+    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 38841);
     BFL_4G_SetCalibrateTimeByUtcSecondsCb(setCalibrateTimeByUtcSecondsCb);
 
     RTU_Packet_t pkg = {0};
@@ -167,19 +174,16 @@ void APP_Main()
     uint32_t r1 = 0;
     uint32_t r2 = 0;
 
-    //	while (1)
-    //  {
-    //		uint32_t dwLen = Uart_Read(COM2, aBuf, 1000);
-    //    if (dwLen > 0)
-    //    {
-    //			Uart_Write(COM1, aBuf, dwLen);
-    //		}
-    //		dwLen = Uart_Read(COM1, aBuf, 1000);
-    //    if (dwLen > 0)
-    //    {
-    //			Uart_Write(COM2, aBuf, dwLen);
-    //		}
-    //	}
+//    while (1) {
+//        uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
+//        if (dwLen > 0) {
+//            Uart_Write(COM1, aBuf, dwLen);
+//        }
+//        dwLen = Uart_Read(COM1, aBuf, 1000);
+//        if (dwLen > 0) {
+//            Uart_Write(COM3, aBuf, dwLen);
+//        }
+//    }
 
     uint32_t last_recv_time = 0;
     PeriodREC_t s_tims1;
@@ -200,6 +204,23 @@ void APP_Main()
         } else if (sd_change == 1) {
             ULOG_INFO("[SD Card] SD Card is inserted");
             SD_Card_FatFs_Init();
+
+            snprintf((char *)filePath, sizeof(filePath), "1:test.text");
+            res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+            if (res != FR_OK) {
+                ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
+            } else {
+                ULOG_INFO("[FatFs] open %s  ok", filePath);
+            }
+
+            res = f_write(&USERFile1, "test", strlen("test"), &w_buf_len);
+            if (res != FR_OK) {
+                ULOG_ERROR("[FatFs] write %s failed  err code = %d", filePath, res);
+            } else {
+                ULOG_INFO("[FatFs] write %s  ok", filePath);
+            }
+
+            f_close(&USERFile1);
         }
 
         BFL_4G_Poll();
@@ -209,8 +230,7 @@ void APP_Main()
             for (int i = 0; i < dwLen; i++) {
                 if (aBuf[i] == '\r') {
                     Uart_Write(COM1, "\n\r", 2);
-                }else
-                {
+                } else {
                     Uart_Write(COM1, &aBuf[i], 1);
                 }
             }
@@ -239,40 +259,46 @@ void APP_Main()
             } break;
 
             case 1: {
-                uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
-                if (dwLen > 0) {
 
-                    sc_byte_buffer_push_data(&_4G_rev_buffer, aBuf, dwLen);
+                if (BFL_4G_TCP_Writeable(SOCKET0)) {
+                    uint32_t dwLen = Uart_Read(COM3, aBuf, 50);
+                    if (dwLen > 0) {
+                        sc_byte_buffer_push_data(&_4G_rev_buffer, aBuf, dwLen);
+                        last_recv_time = HDL_CPU_Time_GetTick();
+                        //      var.datetime = 1;
+                        //      var.ms = 1;
+                        //      // 放数据到采样点
+                        //      RTU_Sampling_Var_encoder_no_timestamp(&var, 1, &aBuf, dwLen);
 
-                    last_recv_time = HDL_CPU_Time_GetTick();
-
-                    //      var.datetime = 1;
-                    //      var.ms = 1;
-                    //      // 放数据到采样点
-                    //      RTU_Sampling_Var_encoder_no_timestamp(&var, 1, &aBuf, dwLen);
-
-                    //      if (Sensor_Queue_Write(&var) == 0)
-                    //      {
-                    //        ULOG_ERROR("[ETP] sample point queue is full.");
-                    //      }
-                }
-
-                if (((HDL_CPU_Time_GetTick() - last_recv_time) > 2 && sc_byte_buffer_size(&_4G_rev_buffer) > 0) ||
-                    sc_byte_buffer_size(&_4G_rev_buffer) > 512) {
-
-                    BFL_4G_TCP_Write(SOCKET0, (uint8_t *)sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer));
-                    BFL_LED_Toggle(LED1);
-                    // 在每次准备写入数据之前检查文件是否可写
-                    res = f_write(&USERFile1, sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer), &w_buf_len);
-                    if (res != FR_OK) {
-                        ULOG_ERROR("[FatFs] write %s failed  err code = %d", filePath, res);
+                        //      if (Sensor_Queue_Write(&var) == 0)
+                        //      {
+                        //        ULOG_ERROR("[ETP] sample point queue is full.");
+                        //      }
                     } else {
-                        ULOG_INFO("[FatFs] write %s  ok", filePath);
+                        uint32_t dwLen1 = BFL_4G_TCP_Read(SOCKET0, RxBuf, sizeof(RxBuf));
+                        if (dwLen1 > 0) {
+                            takeModbus1();
+                            Uart_Write(COM3, RxBuf, dwLen1);
+                        }
                     }
 
-                    sd_write_times++;
+                    if (((HDL_CPU_Time_GetTick() - last_recv_time) > 2 && sc_byte_buffer_size(&_4G_rev_buffer) > 0) ||
+                        sc_byte_buffer_size(&_4G_rev_buffer) > 400) {
 
-                    sc_byte_buffer_clear(&_4G_rev_buffer);
+                        BFL_4G_TCP_Write(SOCKET0, (uint8_t *)sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer));
+                        BFL_LED_Toggle(LED1);
+                        // 在每次准备写入数据之前检查文件是否可写
+                        res = f_write(&USERFile1, sc_byte_buffer_data_ptr(&_4G_rev_buffer), sc_byte_buffer_size(&_4G_rev_buffer), &w_buf_len);
+                        if (res != FR_OK) {
+                            ULOG_ERROR("[FatFs] write %s failed  err code = %d", filePath, res);
+                        } else {
+                            ULOG_INFO("[FatFs] write %s  ok", filePath);
+                        }
+
+                        sd_write_times++;
+
+                        sc_byte_buffer_clear(&_4G_rev_buffer);
+                    }
                 }
 
                 if (period_query_user(&s_tims2, 2000)) {

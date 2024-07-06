@@ -21,10 +21,10 @@
 uint8_t var = 0;
 uint8_t GET_TEST_DATA(uint32_t i)
 {
-    return ((uint8_t)((i) * (3 + i) + var));
+    return ((uint8_t)((i) * (1 + i) + var));
 }
 
-static uint8_t test_buf[W25Q512_SECTOR_SIZE * 2];
+static uint8_t test_buf[W25Q512_SECTOR_SIZE * 8];
 static uint8_t read_buf[W25Q512_SECTOR_SIZE] = {0};
 
 /**
@@ -75,7 +75,7 @@ void CHIP_W25Q512_io_rate()
 void CHIP_W25Q512_io_check(uint32_t start_address)
 {
     Debug_Printf("\r\n%s\r\n", __func__);
-    uint32_t total_test_size = W25Q512_SECTOR_SIZE * 2 - 12;
+    uint32_t total_test_size = W25Q512_SECTOR_SIZE * 8 - 12;
     uint32_t error_cnt       = 0;
 #define PRE_TEST_SIZE 256
     start_address += PRE_TEST_SIZE;

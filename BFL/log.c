@@ -89,7 +89,7 @@ void ulog_init_user()
     SEGGER_RTT_SetTerminal(0);
 #elif USING_USB_CDC == 1
 #elif USING_UART == 1
-    Uart_Init(DEBUG_COM, 460800, LL_USART_DATAWIDTH_8B, LL_USART_STOPBITS_1, LL_USART_PARITY_NONE);
+    Uart_Init(DEBUG_COM, 1500000UL, LL_USART_DATAWIDTH_8B, LL_USART_STOPBITS_1, LL_USART_PARITY_NONE);
 #endif
     // dynamically change the threshold for a specific logger
     ULOG_SUBSCRIBE(my_console_logger, ULOG_DEBUG_LEVEL);

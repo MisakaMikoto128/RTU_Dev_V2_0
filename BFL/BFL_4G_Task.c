@@ -263,7 +263,7 @@ void at_cgact_task_send()
     attr.prefix   = NULL;
     attr.suffix   = "OK";
     attr.cb       = NULL;
-    attr.timeout  = 1000;
+    attr.timeout  = 2000;
     attr.retry    = 2;
     attr.priority = AT_PRIORITY_LOW;
     attr.ctx      = NULL;

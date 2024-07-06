@@ -120,18 +120,21 @@ int main(void)
     /* Initialize all configured peripherals */
     /* USER CODE BEGIN 2 */
     // W25Q512测试
-    ulog_init_user();
-    CHIP_W25Q512_Init();
-    while (true) {
-        CHIP_W25Q512_io_rate();
-        CHIP_W25Q512_io_check(12);
-        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE / 4);
-        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE * 100 + W25Q512_SECTOR_SIZE / 4);
-        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE * 200 + W25Q512_SECTOR_SIZE / 4);
-        CHIP_W25Q512_sector_io_check();
-    }
-
+    //    ulog_init_user();
+    //    CHIP_W25Q512_Init();
+    // while (true)
+    //    {
+    //        CHIP_W25Q512_io_rate();
+    //        CHIP_W25Q512_io_check(12);
+    //        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE / 4);
+    //        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE * 100 + W25Q512_SECTOR_SIZE / 4);
+    //        CHIP_W25Q512_io_check(W25Q512_SECTOR_SIZE * 200 + W25Q512_SECTOR_SIZE / 4);
+    //        CHIP_W25Q512_io_check(222);
+    //        CHIP_W25Q512_sector_io_check();
+    //    }
+    //
     // CHIP_W25Q512_QFS_test();
+
     // 串口测试
     // HDL_Uart_fifo_test_loop();
     // HDL_Uart_test_loop();
