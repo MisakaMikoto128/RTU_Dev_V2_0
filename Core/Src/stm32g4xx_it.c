@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+extern PCD_HandleTypeDef hpcd_USB_FS;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -266,5 +266,26 @@ void EXTI15_10_IRQHandler(void)
     /* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
     /* USER CODE END EXTI15_10_IRQn 1 */
+}
+
+/******************************************************************************/
+/* STM32G4xx Peripheral Interrupt Handlers                                    */
+/* Add here the Interrupt Handlers for the used peripherals.                  */
+/* For the available peripheral interrupt handler names,                      */
+/* please refer to the startup file (startup_stm32g4xx.s).                    */
+/******************************************************************************/
+
+/**
+  * @brief This function handles USB low priority interrupt remap.
+  */
+void USB_LP_IRQHandler(void)
+{
+  /* USER CODE BEGIN USB_LP_IRQn 0 */
+
+  /* USER CODE END USB_LP_IRQn 0 */
+  HAL_PCD_IRQHandler(&hpcd_USB_FS);
+  /* USER CODE BEGIN USB_LP_IRQn 1 */
+
+  /* USER CODE END USB_LP_IRQn 1 */
 }
 /* USER CODE END 1 */

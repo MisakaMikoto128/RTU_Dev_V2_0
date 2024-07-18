@@ -38,6 +38,9 @@
 #include "./sdcard/sdcard_test.h"
 #include "app_fatfs.h"
 
+#include "usbd_cdc_if.h"
+#include "usb_device.h"
+
 typedef struct tagSysInfo_t {
     uint32_t devid;
     uint8_t mode;
@@ -115,7 +118,9 @@ uint8_t Sensor_Queue_Read(RTU_Sampling_Var_t *var)
 void APP_Main()
 {
     HDL_CPU_Time_Init();
-
+    
+     MX_USB_Device_Init();
+    
     LoopFrequencyTest_t loop_frq_test = {
         .measure_time = 1000, // 测试1秒钟
                               // 其他成员默认初始化为0.

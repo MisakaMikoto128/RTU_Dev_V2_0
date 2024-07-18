@@ -79,7 +79,7 @@
 /*---------- -----------*/
 #define USBD_SELF_POWERED     1U
 /*---------- -----------*/
-#define MSC_MEDIA_PACKET     512U
+#define MSC_MEDIA_PACKET     4096U
 /*---------- -----------*/
 #define USBD_DFU_MAX_ITF_NUM     1U
 /*---------- -----------*/

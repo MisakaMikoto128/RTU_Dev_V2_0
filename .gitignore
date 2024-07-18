@@ -25,3 +25,4 @@ RTU_Dev_V2_0.code-workspace
 build/*
 3rdparty/lua-5.4.6/*
 .idea/*
+/tools/*

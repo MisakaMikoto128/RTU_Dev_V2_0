@@ -63,8 +63,8 @@
   */
 
 #define STORAGE_LUN_NBR                  1
-#define STORAGE_BLK_NBR                  80
-#define STORAGE_BLK_SIZ                  0x200
+#define STORAGE_BLK_NBR                  W25Q512_SECTOR_COUNT
+#define STORAGE_BLK_SIZ                  W25Q512_SECTOR_SIZE
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 
@@ -149,7 +149,7 @@ static int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uin
 static int8_t STORAGE_GetMaxLun_FS(void);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
-
+#include "CHIP_W25Q512.h"
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -177,7 +177,11 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS =
 int8_t STORAGE_Init_FS(uint8_t lun)
 {
   /* USER CODE BEGIN 2 */
-  return (USBD_OK);
+  int8_t ret = USBD_OK;
+  // if (CHIP_W25Q512_Init() != 0) {
+  //   ret = USBD_FAIL;
+  // }
+  return ret;
   /* USER CODE END 2 */
 }
 
@@ -221,7 +225,6 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun)
   /* USER CODE END 5 */
 }
 
-static uint8_t sim_buf[STORAGE_BLK_SIZ*STORAGE_BLK_NBR] = {0};
 /**
   * @brief  .
   * @param  lun: .
@@ -230,7 +233,9 @@ static uint8_t sim_buf[STORAGE_BLK_SIZ*STORAGE_BLK_NBR] = {0};
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 6 */
-  memcpy(buf, sim_buf + blk_addr*STORAGE_BLK_SIZ, blk_len*STORAGE_BLK_SIZ);
+  for (uint32_t i = 0; i < blk_len; i++) {
+    CHIP_W25Q512_read_one_sector(blk_addr + i, buf + i * W25Q512_SECTOR_SIZE);
+  }
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -243,7 +248,9 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 7 */
-  memcpy(sim_buf + blk_addr*STORAGE_BLK_SIZ, buf, blk_len*STORAGE_BLK_SIZ);
+  for (uint32_t i = 0; i < blk_len; i++) {
+      w25q512_write_one_sector(blk_addr + i, buf + i * W25Q512_SECTOR_SIZE);
+  }
   return (USBD_OK);
   /* USER CODE END 7 */
 }
