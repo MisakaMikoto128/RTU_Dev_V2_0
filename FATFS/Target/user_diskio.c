@@ -47,9 +47,6 @@ static volatile DSTATUS Stat = STA_NOINIT;
 /* 为每个设备定义一个物理编号 */
 #define ATA       1 // SD卡
 #define SPI_FLASH 0 // 预留外部SPI Flash使用
-
-// 固定只支持blocksize大小为512的卡，兼容大于512的卡时，该卡容量会变小
-#define SD_BLOCKSIZE 512 // SDCardInfo.CardBlockSize
 /* USER CODE END DECL */
 
 /* Private function prototypes -----------------------------------------------*/

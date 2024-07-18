@@ -246,6 +246,9 @@ extern SD_CardInfo SDCardInfo; // 用于存储卡的信息
 #define SD_TYPE_V2     2 // SDSC
 #define SD_TYPE_V2HC   4 // SDHC
 
+// 固定只支持blocksize大小为512的卡，兼容大于512的卡时，该卡容量会变小
+#define SD_BLOCKSIZE 512 // SDCardInfo.CardBlockSize
+
 /** @defgroup STM32_EVAL_SPI_SD_Exported_Functions
  * @{
  */

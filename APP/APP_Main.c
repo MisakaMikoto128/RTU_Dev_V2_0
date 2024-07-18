@@ -119,7 +119,7 @@ void APP_Main()
 {
     HDL_CPU_Time_Init();
     
-     MX_USB_Device_Init();
+    MX_USB_Device_Init();
     
     LoopFrequencyTest_t loop_frq_test = {
         .measure_time = 1000, // 测试1秒钟
@@ -148,6 +148,8 @@ void APP_Main()
     ULOG_INFO("====================================================================");
 
     FatFs_Init();
+    while (1) {
+    }
     // App初始化
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);
@@ -166,7 +168,7 @@ void APP_Main()
     releaseModbus1();
 
     BFL_4G_Init("IP", "CMIOT");
-    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 38841);
+    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 32166);
     BFL_4G_SetCalibrateTimeByUtcSecondsCb(setCalibrateTimeByUtcSecondsCb);
 
     RTU_Packet_t pkg = {0};
@@ -211,21 +213,20 @@ void APP_Main()
             SD_Card_FatFs_Init();
 
             snprintf((char *)filePath, sizeof(filePath), "1:test.text");
+            // 尝试以 FA_OPEN_APPEND 模式打开文件
             res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+
+            if (res == FR_NO_FILE) {
+                // 如果文件不存在，尝试以 FA_CREATE_NEW 模式创建文件
+                res = f_open(&USERFile1, filePath, FA_CREATE_NEW | FA_WRITE | FA_READ);
+            }
+
             if (res != FR_OK) {
                 ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
             } else {
-                ULOG_INFO("[FatFs] open %s  ok", filePath);
+                ULOG_INFO("[FatFs] open %s ok", filePath);
+                f_close(&USERFile1);
             }
-
-            res = f_write(&USERFile1, "test", strlen("test"), &w_buf_len);
-            if (res != FR_OK) {
-                ULOG_ERROR("[FatFs] write %s failed  err code = %d", filePath, res);
-            } else {
-                ULOG_INFO("[FatFs] write %s  ok", filePath);
-            }
-
-            f_close(&USERFile1);
         }
 
         BFL_4G_Poll();

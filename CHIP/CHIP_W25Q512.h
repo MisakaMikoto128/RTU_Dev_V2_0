@@ -93,4 +93,7 @@ int32_t w25q512_erase_one_sector(uint32_t sector);
 int32_t w25q512_write_one_sector_no_erase(uint32_t sector, uint8_t *buf);
 int32_t w25q512_write_one_sector(uint32_t sector, uint8_t *buf);
 int32_t CHIP_W25Q512_read_one_sector(uint32_t sec_idx, uint8_t *buf);
+
+#define CHIP_W25Q512_GetSectorNum() W25Q512_SECTOR_COUNT
+#define CHIP_W25Q512_GetSectorSize() W25Q512_SECTOR_SIZE
 #endif // !CHIP_W25Q512_H_

@@ -1507,9 +1507,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>::CMSIS</GroupName>
-        </Group>
-        <Group>
           <GroupName>Application/User/USB_Device/Target</GroupName>
           <Files>
             <File>
@@ -1548,6 +1545,9 @@
               <FilePath>..\USB_Device\App\usbd_cdc_if.c</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>
