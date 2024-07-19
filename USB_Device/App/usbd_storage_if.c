@@ -62,7 +62,7 @@
  * @{
  */
 
-#define STORAGE_LUN_NBR 1
+#define STORAGE_LUN_NBR 2
 // 定义存储设备的 LUN
 #define LUN_SPI_FLASH 0
 #define LUN_SD_CARD   1
@@ -235,15 +235,14 @@ int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_
             break;
 
         case LUN_SD_CARD: // LUN 0: SD 卡
-            *block_num  = 10000;
-            *block_size = SD_BLOCKSIZE;
+            *block_num  = SDCardInfo.CardCapacity / SDCardInfo.CardBlockSize;
+            *block_size = SDCardInfo.CardBlockSize;
             break;
 
         default: // 未知的 LUN
             ret = USBD_FAIL;
             break;
     }
-    ULOG_INFO("lun=%d, block_num=%d, block_size=%d", lun, *block_num, *block_size);
     return ret;
     /* USER CODE END 3 */
 }
@@ -256,7 +255,21 @@ int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_
 int8_t STORAGE_IsReady_FS(uint8_t lun)
 {
     /* USER CODE BEGIN 4 */
-    return (USBD_OK);
+    int8_t ret = USBD_OK;
+    switch (lun) {
+        case LUN_SPI_FLASH: // LUN 1: SPI 闪存
+            break;
+        case LUN_SD_CARD: // LUN 0: SD 卡
+            if (SD_Detect() == SD_NOT_PRESENT || SD_Card_Is_IF_Inited() == false) {
+                ret = USBD_FAIL;
+            }
+            break;
+        default: // 未知的 LUN
+            ret = USBD_FAIL;
+            break;
+    }
+
+    return ret;
     /* USER CODE END 4 */
 }
 

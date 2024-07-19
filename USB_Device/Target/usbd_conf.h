@@ -81,6 +81,8 @@
 /*---------- -----------*/
 #define MSC_MEDIA_PACKET     4096U
 /*---------- -----------*/
+#define MSC_MAX_LUN           2U
+/*---------- -----------*/
 #define USBD_DFU_MAX_ITF_NUM     1U
 /*---------- -----------*/
 #define USBD_DFU_XFER_SIZE     1024U

@@ -148,8 +148,7 @@ void APP_Main()
     ULOG_INFO("====================================================================");
 
     FatFs_Init();
-    while (1) {
-    }
+
     // App初始化
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);

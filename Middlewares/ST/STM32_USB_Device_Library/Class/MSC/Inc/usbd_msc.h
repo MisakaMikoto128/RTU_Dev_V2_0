@@ -93,11 +93,17 @@ typedef struct
     uint8_t scsi_sense_tail;
     uint8_t scsi_medium_state;
 
-    uint16_t scsi_blk_size;
-    uint32_t scsi_blk_nbr;
+    // uint16_t scsi_blk_size;
+    // uint32_t scsi_blk_nbr;
 
-    uint32_t scsi_blk_addr;
-    uint32_t scsi_blk_len;
+    // uint32_t scsi_blk_addr;
+    // uint32_t scsi_blk_len;
+
+    uint16_t scsi_blk_sizes[MSC_MAX_LUN];
+    uint32_t scsi_blk_nbrs[MSC_MAX_LUN];
+
+    uint32_t scsi_blk_addrs[MSC_MAX_LUN];
+    uint32_t scsi_blk_lens[MSC_MAX_LUN];
 } USBD_MSC_BOT_HandleTypeDef;
 
 /* Structure for MSC process */
