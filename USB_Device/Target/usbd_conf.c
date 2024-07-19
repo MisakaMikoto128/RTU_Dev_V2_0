@@ -431,22 +431,31 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 
   /* USER CODE END RegisterCallBackSecondPart */
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
-  /* USER CODE BEGIN EndPoint_Configuration */
-  #define EP_NUM 3
-  #define PMAADRESS_START (0x08 * EP_NUM)
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x00 , PCD_SNG_BUF, PMAADRESS_START+64*0);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x80 , PCD_SNG_BUF, PMAADRESS_START+64*1);
-  /* USER CODE END EndPoint_Configuration */
-  /* USER CODE BEGIN EndPoint_Configuration_MSC */
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x81 , PCD_SNG_BUF, PMAADRESS_START+64*2);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x01 , PCD_SNG_BUF, PMAADRESS_START+64*3);
-  /* USER CODE END EndPoint_Configuration_MSC */
-  /* USER CODE BEGIN EndPoint_Configuration_CDC */
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x82 , PCD_SNG_BUF, PMAADRESS_START+64*4);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x02 , PCD_SNG_BUF, PMAADRESS_START+64*5);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x83 , PCD_SNG_BUF, PMAADRESS_START+64*6);
-  /* USER CODE END EndPoint_Configuration_CDC */
-  return USBD_OK;
+/* USER CODE BEGIN EndPoint_Configuration */
+#define EP_NUM       3
+#define PMA_BASE     (0x08 * EP_NUM)
+#define EP0_BUF_SIZE 64
+#define MSC_BUF_SIZE 64
+#define CDC_BUF_SIZE 64 // Assuming CDC buffer size remains 64
+
+// Define starting addresses for each endpoint
+#define EP0_START PMA_BASE
+#define MSC_START (EP0_START + EP0_BUF_SIZE * 2)
+#define CDC_START (MSC_START + MSC_BUF_SIZE * 2)
+
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x00, PCD_SNG_BUF, EP0_START + EP0_BUF_SIZE * 0);
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x80, PCD_SNG_BUF, EP0_START + EP0_BUF_SIZE * 1);
+    /* USER CODE END EndPoint_Configuration */
+    /* USER CODE BEGIN EndPoint_Configuration_MSC */
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x81, PCD_SNG_BUF, MSC_START + MSC_BUF_SIZE * 0);
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x01, PCD_SNG_BUF, MSC_START + MSC_BUF_SIZE * 1);
+    /* USER CODE END EndPoint_Configuration_MSC */
+    /* USER CODE BEGIN EndPoint_Configuration_CDC */
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x82, PCD_SNG_BUF, CDC_START + CDC_BUF_SIZE * 0);
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x02, PCD_SNG_BUF, CDC_START + CDC_BUF_SIZE * 1);
+    HAL_PCDEx_PMAConfig((PCD_HandleTypeDef *)pdev->pData, 0x83, PCD_SNG_BUF, CDC_START + CDC_BUF_SIZE * 2);
+    /* USER CODE END EndPoint_Configuration_CDC */
+    return USBD_OK;
 }
 
 /**

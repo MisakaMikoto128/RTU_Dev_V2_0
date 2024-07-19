@@ -52,16 +52,16 @@ __ALIGN_BEGIN static uint8_t USBD_CUD_CfgHSDesc[USB_CUD_CONFIG_DESC_SIZ] __ALIGN
         0x05,          /* Endpoint descriptor type */
         MSC_EPIN_ADDR, /* Endpoint address (IN, address 1) USB设备的端点地址: 0x81 => 1000 00001(Bit7 表示方向 1/0 => In/Out ，Bit3~0表示端点号)*/
         0x02,          /* Bulk endpoint type 端点属性:(Bit1-0: 00控制，01同步，02批量，03中断) */
-        LOBYTE(CUD_MAX_HS_PACKET),
-        HIBYTE(CUD_MAX_HS_PACKET),
+        LOBYTE(MSC_MAX_HS_PACKET),
+        HIBYTE(MSC_MAX_HS_PACKET),
         0x00, /* Polling interval in milliseconds */
 
         0x07,           /* Endpoint descriptor length = 7 */
         0x05,           /* Endpoint descriptor type */
         MSC_EPOUT_ADDR, /* Endpoint address (OUT, address 1) */
         0x02,           /* Bulk endpoint type */
-        LOBYTE(CUD_MAX_HS_PACKET),
-        HIBYTE(CUD_MAX_HS_PACKET),
+        LOBYTE(MSC_MAX_HS_PACKET),
+        HIBYTE(MSC_MAX_HS_PACKET),
         0x00, /* Polling interval in milliseconds */
 
         /* IAD Descriptor */

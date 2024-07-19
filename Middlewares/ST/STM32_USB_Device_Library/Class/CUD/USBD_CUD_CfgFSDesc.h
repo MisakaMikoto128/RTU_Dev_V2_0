@@ -52,16 +52,16 @@ __ALIGN_BEGIN static uint8_t USBD_CUD_CfgFSDesc[USB_CUD_CONFIG_DESC_SIZ] __ALIGN
         0x05,          /* Endpoint descriptor type */
         MSC_EPIN_ADDR, /* Endpoint address (IN, address 1) */
         0x02,          /* Bulk endpoint type */
-        LOBYTE(CUD_MAX_FS_PACKET),
-        HIBYTE(CUD_MAX_FS_PACKET),
+        LOBYTE(MSC_MAX_FS_PACKET),
+        HIBYTE(MSC_MAX_FS_PACKET),
         0x00, /* Polling interval in milliseconds */
 
         0x07,           /* Endpoint descriptor length = 7 */
         0x05,           /* Endpoint descriptor type */
         MSC_EPOUT_ADDR, /* Endpoint address (OUT, address 1) */
         0x02,           /* Bulk endpoint type */
-        LOBYTE(CUD_MAX_FS_PACKET),
-        HIBYTE(CUD_MAX_FS_PACKET),
+        LOBYTE(MSC_MAX_FS_PACKET),
+        HIBYTE(MSC_MAX_FS_PACKET),
         0x00, /* Polling interval in milliseconds */
 
         /* IAD Descriptor */

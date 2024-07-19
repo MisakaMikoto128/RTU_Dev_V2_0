@@ -311,7 +311,7 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
             break;
 
         default: // 未知的 LUN
-            // ret = USBD_FAIL;
+            ret = USBD_FAIL;
             break;
     }
 

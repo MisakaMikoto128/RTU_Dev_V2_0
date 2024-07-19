@@ -48,8 +48,8 @@ extern "C" {
 #define MSC_MEDIA_PACKET 512U
 #endif /* MSC_MEDIA_PACKET */
 
-#define MSC_MAX_FS_PACKET       0x40U
-#define MSC_MAX_HS_PACKET       0x200U
+#define MSC_MAX_FS_PACKET       64U
+#define MSC_MAX_HS_PACKET       512U
 
 #define BOT_GET_MAX_LUN         0xFE
 #define BOT_RESET               0xFF

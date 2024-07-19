@@ -46,13 +46,8 @@ extern "C" {
 /** @defgroup USBD_BOT_Exported_Defines
  * @{
  */
-/* CUD Class Config */
-#ifndef CUD_MEDIA_PACKET
-#define CUD_MEDIA_PACKET 512U
-#endif /* CUD_MEDIA_PACKET */
 
-#define CUD_MAX_FS_PACKET 0x40U
-#define CUD_MAX_HS_PACKET 0x200U
+#define CUD_MAX_FS_PACKET MSC_MAX_FS_PACKET
 
 #include "usbd_desc.h"
 
