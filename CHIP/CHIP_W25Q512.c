@@ -9,8 +9,11 @@
  *
  */
 #include "CHIP_W25Q512.h"
+#include "CHIP_W25Q512_DMA.h"
 
 QSPI_HandleTypeDef hqspi1;
+DMA_HandleTypeDef hdma_quadspi;
+
 #define w25qxx_hqspi hqspi1
 
 // 将x按照n对齐，例如ALIGN(3,4) = 4，ALIGN(6,4) = 8。n必须为2的幂次。
@@ -37,6 +40,9 @@ int32_t w25q512_erase_one_sector_cmd(uint32_t sector);
 int32_t CHIP_W25Q512_Init()
 {
     int32_t status = 0;
+
+    CHIP_W25Q512_DMA_Init();
+
     // 1.启动QSPI外设
     w25qxx_hqspi.Instance = QUADSPI;
     HAL_QSPI_DeInit(&w25qxx_hqspi); // reset QSPI
@@ -60,6 +66,147 @@ int32_t CHIP_W25Q512_Init()
     w25q512_send_cmd(W25QXX_CMD_Exit4ByteAddrMode);
     w25q512_send_cmd(W25QXX_CMD_Enter4ByteAddrMode);
     return status;
+}
+
+void HAL_QSPI_MspInit(QSPI_HandleTypeDef *qspiHandle)
+{
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    if (qspiHandle->Instance == QUADSPI) {
+        /* USER CODE BEGIN QUADSPI_MspInit 0 */
+
+        /* USER CODE END QUADSPI_MspInit 0 */
+        LL_RCC_SetQUADSPIClockSource(LL_RCC_QUADSPI_CLKSOURCE_SYSCLK);
+        // LL_RCC_SetQUADSPIClockSource(LL_RCC_QUADSPI_CLKSOURCE_PLL);
+        /* QUADSPI clock enable */
+        __HAL_RCC_QSPI_CLK_ENABLE();
+
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        /**QUADSPI1 GPIO Configuration
+        PA2     ------> QUADSPI1_BK1_NCS
+        PA3     ------> QUADSPI1_CLK
+        PA6     ------> QUADSPI1_BK1_IO3
+        PA7     ------> QUADSPI1_BK1_IO2
+        PB0     ------> QUADSPI1_BK1_IO1
+        PB1     ------> QUADSPI1_BK1_IO0
+        */
+        /**QUADSPI1 GPIO Pull
+               QSPI_CLOCK_MODE_0->CLK IDLE IS LOW
+               QSPI_CLOCK_MODE_3->CLK IDLE IS HIGH
+               CS->IDLE IS HIGH
+        */
+        GPIO_InitStruct.Pin       = GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_6 | GPIO_PIN_7;
+        GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull      = GPIO_PULLDOWN;
+        GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        GPIO_InitStruct.Pin       = GPIO_PIN_0 | GPIO_PIN_1;
+        GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull      = GPIO_PULLDOWN;
+        GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+        /* USER CODE BEGIN QUADSPI_MspInit 1 */
+
+        /* QUADSPI DMA Init */
+        /* QUADSPI Init */
+        hdma_quadspi.Instance                 = DMA1_Channel3;
+        hdma_quadspi.Init.Request             = DMA_REQUEST_QUADSPI;
+        hdma_quadspi.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+        hdma_quadspi.Init.PeriphInc           = DMA_PINC_DISABLE;
+        hdma_quadspi.Init.MemInc              = DMA_MINC_ENABLE;
+        hdma_quadspi.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+        hdma_quadspi.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+        hdma_quadspi.Init.Mode                = DMA_NORMAL;
+        hdma_quadspi.Init.Priority            = DMA_PRIORITY_LOW;
+        if (HAL_DMA_Init(&hdma_quadspi) != HAL_OK) {
+            Error_Handler();
+        }
+
+        __HAL_LINKDMA(qspiHandle, hdma, hdma_quadspi);
+
+        /* QUADSPI interrupt Init */
+        HAL_NVIC_SetPriority(QUADSPI_IRQn, 5, 0);
+        HAL_NVIC_EnableIRQ(QUADSPI_IRQn);
+        /* USER CODE END QUADSPI_MspInit 1 */
+    }
+}
+
+void HAL_QSPI_MspDeInit(QSPI_HandleTypeDef *qspiHandle)
+{
+
+    if (qspiHandle->Instance == QUADSPI) {
+        /* USER CODE BEGIN QUADSPI_MspDeInit 0 */
+
+        /* USER CODE END QUADSPI_MspDeInit 0 */
+        /* Peripheral clock disable */
+        __HAL_RCC_QSPI_CLK_DISABLE();
+
+        /**QUADSPI1 GPIO Configuration
+        PA2     ------> QUADSPI1_BK1_NCS
+        PA3     ------> QUADSPI1_CLK
+        PA6     ------> QUADSPI1_BK1_IO3
+        PA7     ------> QUADSPI1_BK1_IO2
+        PB0     ------> QUADSPI1_BK1_IO1
+        PB1     ------> QUADSPI1_BK1_IO0
+        */
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_6 | GPIO_PIN_7);
+
+        HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+
+        /* USER CODE BEGIN QUADSPI_MspDeInit 1 */
+
+        /* QUADSPI DMA DeInit */
+        HAL_DMA_DeInit(qspiHandle->hdma);
+
+        /* QUADSPI interrupt Deinit */
+        HAL_NVIC_DisableIRQ(QUADSPI_IRQn);
+        /* USER CODE END QUADSPI_MspDeInit 1 */
+    }
+}
+
+/**
+ * @brief This function handles DMA1 channel3 global interrupt.
+ */
+void DMA1_Channel3_IRQHandler(void)
+{
+    /* USER CODE BEGIN DMA1_Channel3_IRQn 0 */
+
+    /* USER CODE END DMA1_Channel3_IRQn 0 */
+    HAL_DMA_IRQHandler(&hdma_quadspi);
+    /* USER CODE BEGIN DMA1_Channel3_IRQn 1 */
+
+    /* USER CODE END DMA1_Channel3_IRQn 1 */
+}
+
+/**
+ * @brief This function handles QUADSPI global interrupt.
+ */
+void QUADSPI_IRQHandler(void)
+{
+    /* USER CODE BEGIN QUADSPI_IRQn 0 */
+
+    /* USER CODE END QUADSPI_IRQn 0 */
+    HAL_QSPI_IRQHandler(&hqspi1);
+    /* USER CODE BEGIN QUADSPI_IRQn 1 */
+
+    /* USER CODE END QUADSPI_IRQn 1 */
+}
+
+// 等待DMA传输完成的方法
+HAL_StatusTypeDef WaitForQSPI_DMACompletion(QSPI_HandleTypeDef *hqspi, uint32_t timeout)
+{
+    uint32_t startTick = HAL_GetTick();
+    while (HAL_QSPI_GetState(hqspi) != HAL_QSPI_STATE_READY) {
+        if ((HAL_GetTick() - startTick) >= timeout) {
+            return HAL_TIMEOUT; // 超时
+        }
+    }
+    return HAL_OK; // 完成
 }
 
 /**
@@ -145,15 +292,28 @@ int32_t CHIP_W25Q512_read(uint32_t address, uint8_t *buf, uint32_t size)
     // pcmd->SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
     // pcmd->AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
 
+    // 发送命令
     if (HAL_QSPI_Command(&w25qxx_hqspi, &s_command, W25Q512_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
         status = -1;
         return status;
     }
 
+#if CHIP_W25Q512_DMA_ENABLE
+    // 使用DMA方式接收数据
+    if (HAL_QSPI_Receive_DMA(&w25qxx_hqspi, buf) != HAL_OK) {
+        status = -1;
+        return status;
+    }
+
+    // 等待DMA传输完成
+    WaitForQSPI_DMACompletion(&w25qxx_hqspi, W25Q512_RECEIVE_TIMEOUT);
+#else
+    // 使用常规方式接收数据
     if (HAL_QSPI_Receive(&w25qxx_hqspi, buf, W25Q512_RECEIVE_TIMEOUT) != HAL_OK) {
         status = -1;
         return status;
     }
+#endif
 
     // 这一句是必要的
     w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
@@ -282,6 +442,17 @@ int32_t w25q512_send_cmd(uint8_t cmd)
     return status;
 }
 
+bool w25q512_is_sector_erased(uint32_t sector)
+{
+    CHIP_W25Q512_read_one_sector(sector, w25q512_buf);
+    for (uint32_t i = 0; i < W25Q512_SECTOR_SIZE; i++) {
+        if (w25q512_buf[i] != 0xFF) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /**
  * @brief W25Q512擦除一个扇区。
  *
@@ -394,15 +565,33 @@ int32_t w25q512_write_page_no_erase(uint32_t address, uint8_t *buf, uint32_t siz
     //  s_command.SIOOMode = QSPI_SIOO_INST_ONLY_FIRST_CMD;
     //  s_command.AddressMode = QSPI_ADDRESS_1_LINE;
 
+    // 发送QSPI命令
     if (HAL_QSPI_Command(&w25qxx_hqspi, &s_command, W25Q512_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
         status = -1;
         return status;
     }
 
+#if CHIP_W25Q512_DMA_ENABLE == 0
+    // 使用DMA方式发送数据
+    if (HAL_QSPI_Transmit_DMA(&w25qxx_hqspi, buf) != HAL_OK) {
+        status = -1;
+        return status;
+    }
+
+    // 等待DMA传输完成
+    if (WaitForQSPI_DMACompletion(&w25qxx_hqspi, W25Q512_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+        status = -1;
+        return status; // 超时或错误返回状态
+    }
+#else
+    // 使用常规方式发送数据
     if (HAL_QSPI_Transmit(&w25qxx_hqspi, buf, W25Q512_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
         status = -1;
         return status;
     }
+#endif
+
+    // 等待设备不忙
     w25q512_wait_busy(W25Q512_TIMEOUT_DEFAULT_VALUE);
     return status;
 }
@@ -475,85 +664,11 @@ int32_t w25q512_write_one_sector(uint32_t sector, uint8_t *buf)
 {
     int32_t status = 0;
 
-    w25q512_erase_one_sector(sector);
+    if (!w25q512_is_sector_erased(sector)) {
+        w25q512_erase_one_sector(sector);
+    }
     status = w25q512_write_one_sector_no_erase(sector, buf);
     return status;
-}
-
-void HAL_QSPI_MspInit(QSPI_HandleTypeDef *qspiHandle)
-{
-
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    if (qspiHandle->Instance == QUADSPI) {
-        /* USER CODE BEGIN QUADSPI_MspInit 0 */
-
-        /* USER CODE END QUADSPI_MspInit 0 */
-        LL_RCC_SetQUADSPIClockSource(LL_RCC_QUADSPI_CLKSOURCE_SYSCLK);
-        // LL_RCC_SetQUADSPIClockSource(LL_RCC_QUADSPI_CLKSOURCE_PLL);
-        /* QUADSPI clock enable */
-        __HAL_RCC_QSPI_CLK_ENABLE();
-
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-        /**QUADSPI1 GPIO Configuration
-        PA2     ------> QUADSPI1_BK1_NCS
-        PA3     ------> QUADSPI1_CLK
-        PA6     ------> QUADSPI1_BK1_IO3
-        PA7     ------> QUADSPI1_BK1_IO2
-        PB0     ------> QUADSPI1_BK1_IO1
-        PB1     ------> QUADSPI1_BK1_IO0
-        */
-        /**QUADSPI1 GPIO Pull
-               QSPI_CLOCK_MODE_0->CLK IDLE IS LOW
-               QSPI_CLOCK_MODE_3->CLK IDLE IS HIGH
-               CS->IDLE IS HIGH
-        */
-        GPIO_InitStruct.Pin       = GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_6 | GPIO_PIN_7;
-        GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Pull      = GPIO_PULLDOWN;
-        GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-        GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-        GPIO_InitStruct.Pin       = GPIO_PIN_0 | GPIO_PIN_1;
-        GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Pull      = GPIO_PULLDOWN;
-        GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-        GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
-        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-        /* USER CODE BEGIN QUADSPI_MspInit 1 */
-
-        /* USER CODE END QUADSPI_MspInit 1 */
-    }
-}
-
-void HAL_QSPI_MspDeInit(QSPI_HandleTypeDef *qspiHandle)
-{
-
-    if (qspiHandle->Instance == QUADSPI) {
-        /* USER CODE BEGIN QUADSPI_MspDeInit 0 */
-
-        /* USER CODE END QUADSPI_MspDeInit 0 */
-        /* Peripheral clock disable */
-        __HAL_RCC_QSPI_CLK_DISABLE();
-
-        /**QUADSPI1 GPIO Configuration
-        PA2     ------> QUADSPI1_BK1_NCS
-        PA3     ------> QUADSPI1_CLK
-        PA6     ------> QUADSPI1_BK1_IO3
-        PA7     ------> QUADSPI1_BK1_IO2
-        PB0     ------> QUADSPI1_BK1_IO1
-        PB1     ------> QUADSPI1_BK1_IO0
-        */
-        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_6 | GPIO_PIN_7);
-
-        HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
-
-        /* USER CODE BEGIN QUADSPI_MspDeInit 1 */
-
-        /* USER CODE END QUADSPI_MspDeInit 1 */
-    }
 }
 
 /**

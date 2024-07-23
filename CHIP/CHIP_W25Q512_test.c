@@ -54,16 +54,16 @@ void CHIP_W25Q512_io_rate()
     Debug_Printf("[W25Q512] read rate = %.2f MB/s\r\n", (total_test_size * 1.0 / (exe_tick) * 1000) / (1024 * 1024));
 
     // 2.写入速度测试
-    // total_test_size = W25Q512_SECTOR_SIZE * 200;
-    // begin_tick = HAL_GetTick();
-    // for (size_t i = 0; i < total_test_size / W25Q512_SECTOR_SIZE; i++)
-    // {
-    //     CHIP_W25Q512_write(i * W25Q512_SECTOR_SIZE, test_buf, W25Q512_SECTOR_SIZE);
-    // }
-    // end_tick = HAL_GetTick();
-    // exe_tick = end_tick - begin_tick;
-    // Debug_Printf("[W25Q512] write time cost %.2f s, totlal read %d MB\r\n", (exe_tick) / 1000.0f, total_test_size / (1024 * 1024));
-    // Debug_Printf("[W25Q512] write rate = %.2f KB/s\r\n", (total_test_size * 1.0 / (exe_tick)*1000) / (1024));
+    total_test_size = W25Q512_SECTOR_SIZE * 200;
+    begin_tick = HAL_GetTick();
+    for (size_t i = 0; i < total_test_size / W25Q512_SECTOR_SIZE; i++)
+    {
+        CHIP_W25Q512_write(i * W25Q512_SECTOR_SIZE, test_buf, W25Q512_SECTOR_SIZE);
+    }
+    end_tick = HAL_GetTick();
+    exe_tick = end_tick - begin_tick;
+    Debug_Printf("[W25Q512] write time cost %.2f s, totlal read %d MB\r\n", (exe_tick) / 1000.0f, total_test_size / (1024 * 1024));
+    Debug_Printf("[W25Q512] write rate = %.2f KB/s\r\n", (total_test_size * 1.0 / (exe_tick)*1000) / (1024));
 }
 
 /**

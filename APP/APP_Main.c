@@ -111,6 +111,14 @@ uint8_t Sensor_Queue_Read(RTU_Sampling_Var_t *var)
     return cqueue_dequeue(&Sensor_Queue, var);
 }
 
+// 创建带日期的文件路径
+void create_dated_filepath(char *filePath, size_t size)
+{
+    mtime_t datetime;
+    datetime_get_localtime(&datetime);
+    snprintf(filePath, size, "1:%04d%02d%02d.txt", datetime.nYear, datetime.nMonth, datetime.nDay);
+}
+
 /**
  * @brief 光伏RTU主程序处理器。
  *
@@ -118,9 +126,7 @@ uint8_t Sensor_Queue_Read(RTU_Sampling_Var_t *var)
 void APP_Main()
 {
     HDL_CPU_Time_Init();
-    
-    MX_USB_Device_Init();
-    
+
     LoopFrequencyTest_t loop_frq_test = {
         .measure_time = 1000, // 测试1秒钟
                               // 其他成员默认初始化为0.
@@ -149,6 +155,8 @@ void APP_Main()
 
     FatFs_Init();
 
+    MX_USB_Device_Init();
+
     // App初始化
 
     Uart_Init(COM3, 115200, LL_LPUART_DATAWIDTH_8B, LL_LPUART_STOPBITS_1, LL_LPUART_PARITY_NONE);
@@ -167,7 +175,7 @@ void APP_Main()
     releaseModbus1();
 
     BFL_4G_Init("IP", "CMIOT");
-    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 32166);
+    BFL_4G_TCP_Init(SOCKET0, "8.135.10.183", 38944);
     BFL_4G_SetCalibrateTimeByUtcSecondsCb(setCalibrateTimeByUtcSecondsCb);
 
     RTU_Packet_t pkg = {0};
@@ -180,25 +188,25 @@ void APP_Main()
     uint32_t r1 = 0;
     uint32_t r2 = 0;
 
-//    while (1) {
-//        uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
-//        if (dwLen > 0) {
-//            Uart_Write(COM1, aBuf, dwLen);
-//        }
-//        dwLen = Uart_Read(COM1, aBuf, 1000);
-//        if (dwLen > 0) {
-//            Uart_Write(COM3, aBuf, dwLen);
-//        }
-//    }
+    //    while (1) {
+    //        uint32_t dwLen = Uart_Read(COM3, aBuf, 1000);
+    //        if (dwLen > 0) {
+    //            Uart_Write(COM1, aBuf, dwLen);
+    //        }
+    //        dwLen = Uart_Read(COM1, aBuf, 1000);
+    //        if (dwLen > 0) {
+    //            Uart_Write(COM3, aBuf, dwLen);
+    //        }
+    //    }
 
     uint32_t last_recv_time = 0;
     PeriodREC_t s_tims1;
     PeriodREC_t s_tims2;
     uint32_t sd_write_times = 0;
     FRESULT res;
-    UINT w_buf_len           = 0;
-    UINT r_buf_len           = 0;
-    const char filePath[128] = {"1:data.txt"};
+    UINT w_buf_len     = 0;
+    UINT r_buf_len     = 0;
+    char filePath[128] = {0};
 
     int appMainStage = 0;
     while (1) {
@@ -210,22 +218,6 @@ void APP_Main()
         } else if (sd_change == 1) {
             ULOG_INFO("[SD Card] SD Card is inserted");
             SD_Card_FatFs_Init();
-
-            snprintf((char *)filePath, sizeof(filePath), "1:test.text");
-            // 尝试以 FA_OPEN_APPEND 模式打开文件
-            res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
-
-            if (res == FR_NO_FILE) {
-                // 如果文件不存在，尝试以 FA_CREATE_NEW 模式创建文件
-                res = f_open(&USERFile1, filePath, FA_CREATE_NEW | FA_WRITE | FA_READ);
-            }
-
-            if (res != FR_OK) {
-                ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
-            } else {
-                ULOG_INFO("[FatFs] open %s ok", filePath);
-                f_close(&USERFile1);
-            }
         }
 
         BFL_4G_Poll();
@@ -245,12 +237,11 @@ void APP_Main()
             case 0: {
                 if (datetime_has_synced()) {
                     appMainStage = 1;
-
-                    // 更具当前日期创建文件
-                    mtime_t datetime;
-                    datetime_get_localtime(&datetime);
-                    snprintf((char *)filePath, sizeof(filePath), "1:%d-%d-%d.csv", datetime.nYear, datetime.nMonth, datetime.nDay);
+                    // 根据当前日期创建文件
+                    create_dated_filepath((char *)filePath, sizeof(filePath));
+                    // 尝试以 FA_OPEN_APPEND 模式打开文件
                     res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
+
                     if (res != FR_OK) {
                         ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);
                     } else {
@@ -312,10 +303,8 @@ void APP_Main()
 
                         // 关闭文件
                         f_close(&USERFile1);
-                        // 重新打开文件
-                        mtime_t datetime;
-                        datetime_get_localtime(&datetime);
-                        snprintf((char *)filePath, sizeof(filePath), "1:%d-%d-%d.csv", datetime.nYear, datetime.nMonth, datetime.nDay);
+                        // 根据当前日期创建文件
+                        create_dated_filepath((char *)filePath, sizeof(filePath));
                         res = f_open(&USERFile1, filePath, FA_OPEN_APPEND | FA_WRITE | FA_READ);
                         if (res != FR_OK) {
                             ULOG_ERROR("[FatFs] open %s failed err code = %d", filePath, res);

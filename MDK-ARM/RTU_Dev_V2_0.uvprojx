@@ -485,6 +485,11 @@
               <FileType>1</FileType>
               <FilePath>..\CHIP\CHIP_EC800M.c</FilePath>
             </File>
+            <File>
+              <FileName>CHIP_W25Q512_DMA.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\CHIP\CHIP_W25Q512_DMA.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
