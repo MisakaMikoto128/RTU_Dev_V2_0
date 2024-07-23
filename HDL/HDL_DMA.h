@@ -1,5 +1,5 @@
 /**
-* @file CHIP_W25Q512_DMA.h
+* @file HDL_DMA.h
 * @author Liu Yuanlin (liuyuanlins@outlook.com)
 * @brief
 * @version 0.1
@@ -9,8 +9,8 @@
 * @copyright Copyright (c) 2024 Liu Yuanlin Personal.
 *
 */
-#ifndef CHIP_W25Q512_DMA_H
-#define CHIP_W25Q512_DMA_H
+#ifndef HDL_DMA_H
+#define HDL_DMA_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,10 +18,9 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "HDL_DMA.h"
-#define CHIP_W25Q512_DMA_ENABLE 1
-void CHIP_W25Q512_DMA_Init(void);
+
+void HDL_DMA_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif //!CHIP_W25Q512_DMA_H
+#endif //!HDL_DMA_H

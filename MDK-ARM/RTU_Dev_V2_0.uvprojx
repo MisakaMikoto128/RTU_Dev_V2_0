@@ -555,6 +555,11 @@
               <FileType>1</FileType>
               <FilePath>..\HDL\HDL_SPI.c</FilePath>
             </File>
+            <File>
+              <FileName>HDL_DMA.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HDL\HDL_DMA.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
